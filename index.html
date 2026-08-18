@@ -299,7 +299,8 @@ async function doSave(){
   flushForm();
   if(!S.form.nombre.trim()){showToast('⚠️ El nombre es requerido');return;}
   const ai=parseFloat(S.form.abonoInicial)||0;
-  let rec={...S.form,abonoInicial:undefined};
+  let rec={...S.form};
+  delete rec.abonoInicial;
   if(S.view==='new'&&ai>0) rec={...rec,abonos:[{id:uid(),monto:ai,fecha:rec.fecha}]};
   else if(S.view==='new') rec={...rec,abonos:[]};
   if(S.view==='new') rec={...rec,id:uid()};
