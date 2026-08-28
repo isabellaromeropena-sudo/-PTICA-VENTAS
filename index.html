@@ -488,7 +488,7 @@ function vForm(){
   <div class="f"><label>Laboratorio</label>
   <select id="fi-laboratorio" onchange="sf('laboratorio',this.value)">
     <option value="" ${!f.laboratorio?'selected':''}>Seleccionar…</option>
-    ${['Sol de Oro','Servioptica','Vértice'].map(t=>`<option value="${t}" ${f.laboratorio===t?'selected':''}>${t}</option>`).join('')}
+    ${['Sol de Oro','Servioptica','Vértice','Optiservices'].map(t=>`<option value="${t}" ${f.laboratorio===t?'selected':''}>${t}</option>`).join('')}
   </select></div>
   <div class="f"><label>N° Orden laboratorio</label><input id="fi-ordenLab" value="${esc(f.ordenLab)}" onchange="sf('ordenLab',this.value)" placeholder="ORD-001"/></div>
 </div>
