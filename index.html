@@ -417,7 +417,7 @@ function vHome(){
   <div class="stat-pill sp-r"><div class="sp-l">Costo total</div><div class="sp-v" style="color:var(--red)">${fmt(costoTot)}</div><div class="sp-s">lentes + monturas</div></div>
   <div class="stat-pill sp-p"><div class="sp-l">Utilidad total</div><div class="sp-v" style="color:var(--purple)">${fmt(utilTot)}</div><div class="sp-s">${margen.toFixed(1)}% margen</div></div>
 </div>
-${prospectos.length?`<div class="card"><div class="ch"><span class="ch-t">🔵 Prospectos (en veremos)</span><button class="ch-a" onclick="S.view='list';setClientType('prospecto')">Ver todos →</button></div>
+${prospectos.length?`<div class="card"><div class="ch"><span class="ch-t">🔵 Prospectos </span><button class="ch-a" onclick="S.view='list';setClientType('prospecto')">Ver todos →</button></div>
 <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
   <div><div class="sp-l">Cotizado sin confirmar</div><div style="font-size:18px;font-weight:800;color:var(--purple);margin-top:2px">${fmt(prospTot)}</div></div>
   <div class="topbar-badge" style="background:var(--purple2);color:var(--purple)">${prospectos.length}</div>
@@ -524,8 +524,8 @@ function vForm(){
 <div class="sl">Identificación</div>
 <div class="f"><label>Tipo de paciente</label>
   <select id="fi-tipoCliente" onchange="sf('tipoCliente',this.value)">
-    <option value="activo" ${f.tipoCliente!=='prospecto'?'selected':''}>🟢 Activo (venta confirmada)</option>
-    <option value="prospecto" ${f.tipoCliente==='prospecto'?'selected':''}>🔵 Prospecto (cotizó, en veremos)</option>
+    <option value="activo" ${f.tipoCliente!=='prospecto'?'selected':''}>🟢 Activo </option>
+    <option value="prospecto" ${f.tipoCliente==='prospecto'?'selected':''}>🔵 Prospecto </option>
   </select>
 </div>
 <div class="fr">
@@ -609,7 +609,7 @@ function vDetail(){
 <div class="sh-hnd"></div>
 <div class="sh-head"><div><h2>${p.nombre}</h2><div style="font-size:12px;color:var(--gray2);margin-top:2px">${p.ciudad||''}</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bdg ${isProsp?'prospecto':'activo'}">${isProsp?'🔵 Prospecto':'🟢 Activo'}</span>${!isProsp?`<span class="bdg ${e}">${elbl(e)}</span>`:''}</div></div>
 <div class="sh-scr">
-${isProsp?`<div style="background:var(--purple2);border:1px solid rgba(124,107,168,.3);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--purple);margin-bottom:12px">🔵 Este paciente está en veremos — cotizó pero aún no confirma la compra. Su valor no se cuenta en las ventas activas.</div>`:''}
+${isProsp?`<div style="background:var(--purple2);border:1px solid rgba(124,107,168,.3);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--purple);margin-bottom:12px">🔵 Este paciente cotizó pero aún no confirma la compra. Su valor no se cuenta en las ventas activas.</div>`:''}
 <div class="cb">
   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--blue2)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
   <div><div class="cb-l">Control</div><div class="cb-v">${p.control||'—'}</div></div>
