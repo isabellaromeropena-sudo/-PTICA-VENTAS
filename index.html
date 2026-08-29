@@ -60,7 +60,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pi-r{text-align:right;flex-shrink:0}
 .pi-amt{font-size:13px;font-weight:800;color:var(--blue2)}
 .bdg{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:700}
-.bdg.paid{background:var(--green2);color:var(--green)}.bdg.partial{background:var(--amber2);color:var(--amber)}.bdg.pending{background:var(--red2);color:var(--red)}
+.bdg.paid{background:var(--green2);color:var(--green)}.bdg.partial{background:var(--amber2);color:var(--amber)}.bdg.pending{background:var(--red2);color:var(--red)}.bdg.prospecto{background:var(--purple2);color:var(--purple)}.bdg.activo{background:var(--green2);color:var(--green)}
+.av-p{background:var(--purple2)!important;color:var(--purple)!important}
+.typetabs{display:flex;gap:8px;padding:12px 16px 4px}
+.typetab{flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--gray2);font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;text-align:center}
+.typetab.on-a{background:var(--green2);border-color:var(--green);color:var(--green)}
+.typetab.on-p{background:var(--purple2);border-color:var(--purple);color:var(--purple)}
 .pb{background:rgba(255,255,255,.08);border-radius:99px;height:5px}
 .pf{height:100%;border-radius:99px;background:var(--blue)}
 .pf.done{background:var(--green)}.pf.mid{background:var(--amber)}
@@ -202,10 +207,11 @@ const tap=p=>(p.abonos||[]).reduce((s,a)=>s+a.monto,0);
 const tsp=p=>tvp(p)-tap(p);
 const estp=p=>{const v=tvp(p),a=tap(p);if(v===0)return'pending';if(a>=v)return'paid';if(a>0)return'partial';return'pending';};
 const elbl=e=>e==='paid'?'Pagado':e==='partial'?'Parcial':'Pendiente';
-const emptyRec=()=>({id:uid(),control:'',nombre:'',fecha:tod(),cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
+const tcli=p=>p&&p.tipoCliente==='prospecto'?'prospecto':'activo';
+const emptyRec=()=>({id:uid(),tipoCliente:'activo',control:'',nombre:'',fecha:tod(),cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let S={view:'home',records:[],search:'',filter:'all',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod()};
+let S={view:'home',records:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod()};
 const app=document.getElementById('app');
 let tTimer=null;
 
@@ -296,7 +302,7 @@ function go(partial){
 
 // Read all live input values from DOM into S.form before save / navigate
 function flushForm(){
-  const ids=['control','nombre','fecha','cedula','correo','edad','telefono','direccion','ciudad','laboratorio','ordenLab','tipoLente','valorLente','costoLente','montura','valorMontura','costoMontura','abonoInicial'];
+  const ids=['tipoCliente','control','nombre','fecha','cedula','correo','edad','telefono','direccion','ciudad','laboratorio','ordenLab','tipoLente','valorLente','costoLente','montura','valorMontura','costoMontura','abonoInicial'];
   ids.forEach(k=>{const el=document.getElementById('fi-'+k);if(el)S.form[k]=el.value;});
   // Formula
   ['od','oi'].forEach(eye=>{
@@ -362,34 +368,66 @@ async function delAbono(pid,aid){
   }
 }
 
+async function doConvert(id){
+  const p=S.records.find(r=>r.id===id);
+  if(!p)return;
+  const upd={...p,tipoCliente:'activo'};
+  try{
+    await ventasCol.doc(id).set(upd);
+    S.detail=upd;
+    showToast('✅ Convertido a Activo');render();
+  }catch(e){
+    showToast('❌ No se pudo actualizar.');
+  }
+}
+
+function setClientType(v){
+  S.clientType=v;S.filter='all';S.search='';
+  render();
+}
+
 
 function openDetail(id){const p=S.records.find(r=>r.id===id);if(p){S.detail=p;S.abAmt='';S.abFecha=tod();render();}}
-function openNew(){S.form=emptyRec();S.detail=null;S.view='new';render();}
+function openNew(){S.form=emptyRec();S.form.tipoCliente=S.clientType==='prospecto'?'prospecto':'activo';S.detail=null;S.view='new';render();}
 function openEdit(id){const p=S.records.find(r=>r.id===id);if(p){S.form={...p,abonos:[...p.abonos],abonoInicial:''};S.detail=null;S.view='edit';render();}}
 
 // ── Views ─────────────────────────────────────────────────────────────────────
 function vHome(){
   const recs=S.records;
-  const tot=recs.reduce((s,r)=>s+tvp(r),0);
-  const cob=recs.reduce((s,r)=>s+tap(r),0);
-  const pen=recs.reduce((s,r)=>s+Math.max(0,tsp(r)),0);
-  const costoTot=recs.reduce((s,r)=>s+tcp(r),0);
-  const utilTot=recs.reduce((s,r)=>s+tup(r),0);
+  const activos=recs.filter(r=>tcli(r)==='activo');
+  const prospectos=recs.filter(r=>tcli(r)==='prospecto');
+  const tot=activos.reduce((s,r)=>s+tvp(r),0);
+  const cob=activos.reduce((s,r)=>s+tap(r),0);
+  const pen=activos.reduce((s,r)=>s+Math.max(0,tsp(r)),0);
+  const costoTot=activos.reduce((s,r)=>s+tcp(r),0);
+  const utilTot=activos.reduce((s,r)=>s+tup(r),0);
   const margen=tot>0?(utilTot/tot)*100:0;
-  const rec5=[...recs].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5);
-  const pen5=recs.filter(r=>tsp(r)>0).sort((a,b)=>tsp(b)-tsp(a)).slice(0,4);
+  const prospTot=prospectos.reduce((s,r)=>s+tvp(r),0);
+  const rec5=[...activos].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5);
+  const pen5=activos.filter(r=>tsp(r)>0).sort((a,b)=>tsp(b)-tsp(a)).slice(0,4);
   return`
 <div class="screen">
-<div class="topbar"><div><div class="topbar-title">👁️ HR Visión Empresarial</div><div class="topbar-sub">Óptica</div></div><div style="display:flex;align-items:center;gap:8px"><div class="topbar-badge">${recs.length} pacientes</div><button onclick="doLogout()" style="background:none;border:1px solid var(--border2);color:var(--gray2);font-size:11px;font-weight:700;font-family:var(--font);padding:6px 10px;border-radius:8px;cursor:pointer">Salir</button></div></div>
+<div class="topbar"><div><div class="topbar-title">👁️ HR Visión Empresarial</div><div class="topbar-sub">Óptica</div></div><div style="display:flex;align-items:center;gap:8px"><div class="topbar-badge">${activos.length} activos</div><button onclick="doLogout()" style="background:none;border:1px solid var(--border2);color:var(--gray2);font-size:11px;font-weight:700;font-family:var(--font);padding:6px 10px;border-radius:8px;cursor:pointer">Salir</button></div></div>
 <div class="scroll">
 <div class="stat-grid">
   <div class="stat-pill sp-b"><div class="sp-l">Total ventas</div><div class="sp-v" style="color:var(--blue2)">${fmt(tot)}</div><div class="sp-s">facturado</div></div>
   <div class="stat-pill sp-g"><div class="sp-l">Cobrado</div><div class="sp-v" style="color:var(--green)">${fmt(cob)}</div><div class="sp-s">recibido</div></div>
   <div class="stat-pill sp-r"><div class="sp-l">Por cobrar</div><div class="sp-v" style="color:var(--red)">${fmt(pen)}</div><div class="sp-s">pendiente</div></div>
-  <div class="stat-pill sp-a"><div class="sp-l">Pacientes</div><div class="sp-v" style="color:var(--amber)">${recs.length}</div><div class="sp-s">registrados</div></div>
+  <div class="stat-pill sp-a"><div class="sp-l">Pacientes activos</div><div class="sp-v" style="color:var(--amber)">${activos.length}</div><div class="sp-s">registrados</div></div>
   <div class="stat-pill sp-r"><div class="sp-l">Costo total</div><div class="sp-v" style="color:var(--red)">${fmt(costoTot)}</div><div class="sp-s">lentes + monturas</div></div>
   <div class="stat-pill sp-p"><div class="sp-l">Utilidad total</div><div class="sp-v" style="color:var(--purple)">${fmt(utilTot)}</div><div class="sp-s">${margen.toFixed(1)}% margen</div></div>
 </div>
+${prospectos.length?`<div class="card"><div class="ch"><span class="ch-t">🔵 Prospectos (en veremos)</span><button class="ch-a" onclick="S.view='list';setClientType('prospecto')">Ver todos →</button></div>
+<div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+  <div><div class="sp-l">Cotizado sin confirmar</div><div style="font-size:18px;font-weight:800;color:var(--purple);margin-top:2px">${fmt(prospTot)}</div></div>
+  <div class="topbar-badge" style="background:var(--purple2);color:var(--purple)">${prospectos.length}</div>
+</div>
+${prospectos.slice(0,5).map(r=>`
+<div class="pi" onclick="openDetail('${r.id}')">
+  <div class="av av-p">${r.nombre.charAt(0).toUpperCase()}</div>
+  <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">${r.ciudad||'Sin ciudad'} · ${r.fecha}</div></div>
+  <div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div><span class="bdg prospecto">Prospecto</span></div>
+</div>`).join('')}</div>`:''}
 ${rec5.length?`<div class="card"><div class="ch"><span class="ch-t">🕐 Recientes</span><button class="ch-a" onclick="go({view:'list'})">Ver todos →</button></div>${rec5.map(r=>`
 <div class="pi" onclick="openDetail('${r.id}')">
   <div class="av">${r.nombre.charAt(0).toUpperCase()}</div>
@@ -412,12 +450,18 @@ function vList(){
   const recs=S.records.filter(r=>{
     const q=S.search.toLowerCase();
     const m=!q||r.nombre.toLowerCase().includes(q)||r.cedula.includes(q)||r.control.includes(q)||(r.ciudad||'').toLowerCase().includes(q);
-    return m&&(S.filter==='all'||estp(r)===S.filter);
+    return m&&tcli(r)===S.clientType&&(S.filter==='all'||estp(r)===S.filter);
   }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const nActivos=S.records.filter(r=>tcli(r)==='activo').length;
+  const nProspectos=S.records.filter(r=>tcli(r)==='prospecto').length;
   return`
 <div class="screen">
 <div class="topbar"><div><div class="topbar-title">📋 Pacientes</div><div class="topbar-sub">${recs.length} resultado${recs.length!==1?'s':''}</div></div><div style="display:flex;gap:6px"><button onclick="doImport()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--gray2);font-size:11px;font-weight:700;font-family:var(--font);padding:6px 10px;border-radius:8px;cursor:pointer">↑ Importar</button><button onclick="doExport()" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:var(--green);font-size:11px;font-weight:700;font-family:var(--font);padding:6px 10px;border-radius:8px;cursor:pointer">↓ Excel</button></div></div>
 <div class="scroll">
+<div class="typetabs">
+  <button class="typetab${S.clientType==='activo'?' on-a':''}" onclick="setClientType('activo')">🟢 Activos (${nActivos})</button>
+  <button class="typetab${S.clientType==='prospecto'?' on-p':''}" onclick="setClientType('prospecto')">🔵 Prospectos (${nProspectos})</button>
+</div>
 <div class="sw">
   <svg class="si" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
   <input placeholder="Nombre, cédula, control…" value="${esc(S.search)}" oninput="S.search=this.value;filterList()" type="search" id="search-input"/>
@@ -436,7 +480,7 @@ ${navBar()}
 
 function renderPatientRows(recs){
   if(!recs.length) return`<div class="empty"><span>🔍</span><p>Sin resultados.<br>Prueba otro término o agrega un paciente.</p></div>`;
-  return recs.map(r=>`<div class="pi" onclick="openDetail('${r.id}')"><div class="av">${r.nombre.charAt(0).toUpperCase()}</div><div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · ${r.ciudad||'—'}</div></div><div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div><span class="bdg ${estp(r)}">${elbl(estp(r))}</span></div></div>`).join('');
+  return recs.map(r=>`<div class="pi" onclick="openDetail('${r.id}')"><div class="av${tcli(r)==='prospecto'?' av-p':''}">${r.nombre.charAt(0).toUpperCase()}</div><div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · ${r.ciudad||'—'}</div></div><div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div>${tcli(r)==='prospecto'?`<span class="bdg prospecto">Prospecto</span>`:`<span class="bdg ${estp(r)}">${elbl(estp(r))}</span>`}</div></div>`).join('');
 }
 
 // Search without full re-render
@@ -444,7 +488,7 @@ function filterList(){
   const q=S.search.toLowerCase();
   const recs=S.records.filter(r=>{
     const m=!q||r.nombre.toLowerCase().includes(q)||r.cedula.includes(q)||r.control.includes(q)||(r.ciudad||'').toLowerCase().includes(q);
-    return m&&(S.filter==='all'||estp(r)===S.filter);
+    return m&&tcli(r)===S.clientType&&(S.filter==='all'||estp(r)===S.filter);
   }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
   const el=document.getElementById('patient-list');
   if(el) el.innerHTML=renderPatientRows(recs);
@@ -478,6 +522,12 @@ function vForm(){
 <div class="scroll"><div class="fw">
 
 <div class="sl">Identificación</div>
+<div class="f"><label>Tipo de paciente</label>
+  <select id="fi-tipoCliente" onchange="sf('tipoCliente',this.value)">
+    <option value="activo" ${f.tipoCliente!=='prospecto'?'selected':''}>🟢 Activo (venta confirmada)</option>
+    <option value="prospecto" ${f.tipoCliente==='prospecto'?'selected':''}>🔵 Prospecto (cotizó, en veremos)</option>
+  </select>
+</div>
 <div class="fr">
   <div class="f"><label>N° Control (tarjeta)</label><input id="fi-control" value="${esc(f.control)}" onchange="sf('control',this.value)" placeholder="001"/></div>
   <div class="f"><label>Fecha de consulta</label><input id="fi-fecha" type="date" value="${f.fecha}" onchange="sf('fecha',this.value)"/></div>
@@ -521,8 +571,8 @@ function vForm(){
   <div class="f"><label>Costo montura ($)</label><input id="fi-costoMontura" type="number" inputmode="numeric" value="${esc(f.costoMontura)}" oninput="sfn('costoMontura',this.value)" placeholder="0"/></div>
 </div>
 <div class="fr">
-  <div class="f"><label>Total venta</label><input id="c-total" readonly class="ro-blue" value="${fmt(tot)}"/></div>
-  <div class="f"><label>Utilidad</label><input id="c-utilidad" readonly class="${util>0?'ro-green':util<0?'ro-red':'ro-amber'}" value="${fmt(util)}"/></div>
+  <div class="f"><label>${f.tipoCliente==='prospecto'?'Valor cotizado':'Total venta'}</label><input id="c-total" readonly class="ro-blue" value="${fmt(tot)}"/></div>
+  <div class="f"><label>Utilidad ${f.tipoCliente==='prospecto'?'proyectada':''}</label><input id="c-utilidad" readonly class="${util>0?'ro-green':util<0?'ro-red':'ro-amber'}" value="${fmt(util)}"/></div>
 </div>
 
 <div class="sl">💵 Abono y saldo</div>
@@ -552,12 +602,14 @@ function vDetail(){
   const v=tvp(p),a=tap(p),s=tsp(p),c=tcp(p),u=tup(p);
   const pct=v?Math.min(100,(a/v)*100):0;
   const e=estp(p);
+  const isProsp=tcli(p)==='prospecto';
   return`
 <div class="ov" onclick="if(event.target===this){S.detail=null;render();}">
 <div class="sh">
 <div class="sh-hnd"></div>
-<div class="sh-head"><div><h2>${p.nombre}</h2><div style="font-size:12px;color:var(--gray2);margin-top:2px">${p.ciudad||''}</div></div><span class="bdg ${e}">${elbl(e)}</span></div>
+<div class="sh-head"><div><h2>${p.nombre}</h2><div style="font-size:12px;color:var(--gray2);margin-top:2px">${p.ciudad||''}</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bdg ${isProsp?'prospecto':'activo'}">${isProsp?'🔵 Prospecto':'🟢 Activo'}</span>${!isProsp?`<span class="bdg ${e}">${elbl(e)}</span>`:''}</div></div>
 <div class="sh-scr">
+${isProsp?`<div style="background:var(--purple2);border:1px solid rgba(124,107,168,.3);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--purple);margin-bottom:12px">🔵 Este paciente está en veremos — cotizó pero aún no confirma la compra. Su valor no se cuenta en las ventas activas.</div>`:''}
 <div class="cb">
   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--blue2)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
   <div><div class="cb-l">Control</div><div class="cb-v">${p.control||'—'}</div></div>
@@ -571,7 +623,7 @@ ${dr('Cédula',p.cedula)}${dr('Correo',p.correo)}${dr('Edad',p.edad?p.edad+' añ
   ${['od','oi'].map(eye=>`<div class="fr2"><div class="fc ey">${eye.toUpperCase()}</div>${['esfera','cilindro','eje','adicion'].map(k=>`<div class="fc" style="font-size:13px;color:${p[eye][k]?'var(--white)':'var(--gray)'}">${p[eye][k]||'—'}</div>`).join('')}</div>`).join('')}
 </div>
 <div class="sl2">Venta</div>
-${dr('Laboratorio',p.laboratorio)}${dr('N° Orden lab.',p.ordenLab)}${dr('Tipo de lente',p.tipoLente)}${dr('Montura / Ref.',p.montura)}${dr('Valor lente',fmt(p.valorLente))}${dr('Costo lente',fmt(p.costoLente))}${dr('Valor montura',fmt(p.valorMontura))}${dr('Costo montura',fmt(p.costoMontura))}${dr('Total venta','<span style="color:var(--blue2);font-weight:800">'+fmt(v)+'</span>')}${dr('Costo total','<span style="color:var(--red);font-weight:800">'+fmt(c)+'</span>')}${dr('Utilidad','<span style="color:'+(u>0?'var(--green)':u<0?'var(--red)':'var(--amber)')+';font-weight:800">'+fmt(u)+'</span>')}
+${dr('Laboratorio',p.laboratorio)}${dr('N° Orden lab.',p.ordenLab)}${dr('Tipo de lente',p.tipoLente)}${dr('Montura / Ref.',p.montura)}${dr('Valor lente',fmt(p.valorLente))}${dr('Costo lente',fmt(p.costoLente))}${dr('Valor montura',fmt(p.valorMontura))}${dr('Costo montura',fmt(p.costoMontura))}${dr(isProsp?'Valor cotizado':'Total venta','<span style="color:var(--blue2);font-weight:800">'+fmt(v)+'</span>')}${dr('Costo total','<span style="color:var(--red);font-weight:800">'+fmt(c)+'</span>')}${dr(isProsp?'Utilidad proyectada':'Utilidad','<span style="color:'+(u>0?'var(--green)':u<0?'var(--red)':'var(--amber)')+';font-weight:800">'+fmt(u)+'</span>')}
 <div class="sl2">Pagos</div>
 <div class="sb">
   <div class="sbi"><div class="sbl">Total</div><div class="sbv" style="color:var(--blue2)">${fmt(v)}</div></div>
@@ -594,6 +646,7 @@ ${s>0?`<div class="ab-form">
 <div class="sh-foot">
   <button style="flex:0 0 auto;padding:12px 16px;background:var(--red2);color:var(--red);border:none;border-radius:var(--r2);font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer" onclick="doDel('${p.id}')">Eliminar</button>
   <button style="flex:1;background:var(--bg3);color:var(--gray3);border:1px solid var(--border2);border-radius:var(--r2);font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer" onclick="S.detail=null;render()">Cerrar</button>
+  ${isProsp?`<button style="flex:1;background:var(--green);color:white;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer" onclick="doConvert('${p.id}')">✅ Convertir</button>`:''}
   <button style="flex:1;background:var(--blue);color:white;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;font-family:var(--font);cursor:pointer" onclick="openEdit('${p.id}')">Editar</button>
 </div>
 </div></div>`;
@@ -622,6 +675,7 @@ function render(){
 function doExport(){
   if(!window.XLSX){showToast('⚠️ Cargando librería, intenta en 2 segundos');return;}
   const rows=S.records.map(p=>({
+    'Tipo':tcli(p)==='prospecto'?'Prospecto':'Activo',
     'Control':p.control,'Fecha':p.fecha,'Nombre':p.nombre,'Cédula':p.cedula,
     'Correo':p.correo,'Edad':p.edad,'Teléfono':p.telefono,'Dirección':p.direccion,
     'Ciudad':p.ciudad,
@@ -656,7 +710,8 @@ function doImport(){
         const wb=XLSX.read(ev.target.result,{type:'binary'});
         const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
         const imp=rows.map(r=>({
-          id:uid(),control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||tod(),
+          id:uid(),tipoCliente:String(r['Tipo']||'').toLowerCase().includes('prospecto')?'prospecto':'activo',
+          control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||tod(),
           cedula:String(r['Cédula']||''),correo:r['Correo']||'',edad:String(r['Edad']||''),telefono:String(r['Teléfono']||''),
           direccion:r['Dirección']||'',ciudad:r['Ciudad']||'',
           od:{esfera:String(r['OD Esfera']||''),cilindro:String(r['OD Cilindro']||''),eje:String(r['OD Eje']||''),adicion:String(r['OD Adición']||'')},
@@ -687,7 +742,7 @@ function doImport(){
 window.sf=sf;window.sfx=sfx;window.sfn=sfn;window.go=go;
 window.doSave=doSave;window.doDel=doDel;window.doAbono=doAbono;window.delAbono=delAbono;
 window.openDetail=openDetail;window.openNew=openNew;window.openEdit=openEdit;
-window.filterList=filterList;window.setFilter=setFilter;window.S=S;
+window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.S=S;
 window.doExport=doExport;window.doImport=doImport;
 window.doLogout=()=>auth.signOut();
 
