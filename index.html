@@ -60,7 +60,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pi-r{text-align:right;flex-shrink:0}
 .pi-amt{font-size:13px;font-weight:800;color:var(--blue2)}
 .bdg{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:700}
-.bdg.paid{background:var(--green2);color:var(--green)}.bdg.partial{background:var(--amber2);color:var(--amber)}.bdg.pending{background:var(--red2);color:var(--red)}.bdg.prospecto{background:var(--purple2);color:var(--purple)}.bdg.activo{background:var(--green2);color:var(--green)}
+.bdg.paid{background:var(--green2);color:var(--green)}.bdg.partial{background:var(--amber2);color:var(--amber)}.bdg.pending{background:var(--red2);color:var(--red)}.bdg.prospecto{background:var(--purple2);color:var(--purple)}.bdg.activo{background:var(--green2);color:var(--green)}.bdg.costo{background:rgba(138,131,117,.2);color:var(--gray2)}
 .av-p{background:var(--purple2)!important;color:var(--purple)!important}
 .typetabs{display:flex;gap:8px;padding:12px 16px 4px}
 .typetab{flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--gray2);font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;text-align:center}
@@ -202,13 +202,13 @@ const ventasCol = db.collection('ventas');
 
 const tvp=p=>(parseFloat(p.valorLente)||0)+(parseFloat(p.valorMontura)||0);
 const tcp=p=>(parseFloat(p.costoLente)||0)+(parseFloat(p.costoMontura)||0);
-const tup=p=>tvp(p)-tcp(p);
+const tup=p=>p.esCosto?0:tvp(p)-tcp(p);
 const tap=p=>(p.abonos||[]).reduce((s,a)=>s+a.monto,0);
 const tsp=p=>tvp(p)-tap(p);
 const estp=p=>{const v=tvp(p),a=tap(p);if(v===0)return'pending';if(a>=v)return'paid';if(a>0)return'partial';return'pending';};
 const elbl=e=>e==='paid'?'Pagado':e==='partial'?'Parcial':'Pendiente';
 const tcli=p=>p&&p.tipoCliente==='prospecto'?'prospecto':'activo';
-const emptyRec=()=>({id:uid(),tipoCliente:'activo',control:'',nombre:'',fecha:tod(),cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
+const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let S={view:'home',records:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod()};
@@ -228,12 +228,17 @@ function sfn(k,v){
   S.form[k]=v;
   updateComputed();
 }
+// Checkbox fields that affect computed values
+function sfb(k,v){
+  S.form[k]=v;
+  updateComputed();
+}
 
 function updateComputed(){
   const f=S.form;
   const tot=(parseFloat(f.valorLente)||0)+(parseFloat(f.valorMontura)||0);
   const costo=(parseFloat(f.costoLente)||0)+(parseFloat(f.costoMontura)||0);
-  const util=tot-costo;
+  const util=f.esCosto?0:(tot-costo);
   const ai=parseFloat(f.abonoInicial)||0;
   const sd=Math.max(0,tot-ai);
   const pct=tot>0?Math.min(100,(ai/tot)*100):0;
@@ -396,6 +401,7 @@ function vHome(){
   const recs=S.records;
   const activos=recs.filter(r=>tcli(r)==='activo');
   const prospectos=recs.filter(r=>tcli(r)==='prospecto');
+  const ventasCosto=activos.filter(r=>r.esCosto);
   const tot=activos.reduce((s,r)=>s+tvp(r),0);
   const cob=activos.reduce((s,r)=>s+tap(r),0);
   const pen=activos.reduce((s,r)=>s+Math.max(0,tsp(r)),0);
@@ -403,6 +409,7 @@ function vHome(){
   const utilTot=activos.reduce((s,r)=>s+tup(r),0);
   const margen=tot>0?(utilTot/tot)*100:0;
   const prospTot=prospectos.reduce((s,r)=>s+tvp(r),0);
+  const costoSalesTot=ventasCosto.reduce((s,r)=>s+tvp(r),0);
   const rec5=[...activos].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5);
   const pen5=activos.filter(r=>tsp(r)>0).sort((a,b)=>tsp(b)-tsp(a)).slice(0,4);
   return`
@@ -410,13 +417,24 @@ function vHome(){
 <div class="topbar"><div><div class="topbar-title">👁️ HR Visión Empresarial</div><div class="topbar-sub">Óptica</div></div><div style="display:flex;align-items:center;gap:8px"><div class="topbar-badge">${activos.length} activos</div><button onclick="doLogout()" style="background:none;border:1px solid var(--border2);color:var(--gray2);font-size:11px;font-weight:700;font-family:var(--font);padding:6px 10px;border-radius:8px;cursor:pointer">Salir</button></div></div>
 <div class="scroll">
 <div class="stat-grid">
-  <div class="stat-pill sp-b"><div class="sp-l">Total ventas</div><div class="sp-v" style="color:var(--blue2)">${fmt(tot)}</div><div class="sp-s">facturado</div></div>
+  <div class="stat-pill sp-b"><div class="sp-l">Total ventas</div><div class="sp-v" style="color:var(--blue2)">${fmt(tot)}</div><div class="sp-s">${costoSalesTot>0?fmt(costoSalesTot)+' a costo incl.':'facturado'}</div></div>
   <div class="stat-pill sp-g"><div class="sp-l">Cobrado</div><div class="sp-v" style="color:var(--green)">${fmt(cob)}</div><div class="sp-s">recibido</div></div>
   <div class="stat-pill sp-r"><div class="sp-l">Por cobrar</div><div class="sp-v" style="color:var(--red)">${fmt(pen)}</div><div class="sp-s">pendiente</div></div>
   <div class="stat-pill sp-a"><div class="sp-l">Pacientes activos</div><div class="sp-v" style="color:var(--amber)">${activos.length}</div><div class="sp-s">registrados</div></div>
   <div class="stat-pill sp-r"><div class="sp-l">Costo total</div><div class="sp-v" style="color:var(--red)">${fmt(costoTot)}</div><div class="sp-s">lentes + monturas</div></div>
   <div class="stat-pill sp-p"><div class="sp-l">Utilidad total</div><div class="sp-v" style="color:var(--purple)">${fmt(utilTot)}</div><div class="sp-s">${margen.toFixed(1)}% margen</div></div>
 </div>
+${ventasCosto.length?`<div class="card"><div class="ch"><span class="ch-t">💰 Ventas a costo (familiares)</span></div>
+<div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+  <div><div class="sp-l">Vendido sin utilidad</div><div style="font-size:18px;font-weight:800;color:var(--gray3);margin-top:2px">${fmt(costoSalesTot)}</div><div style="font-size:10.5px;color:var(--gray2);margin-top:2px">Ya está descontado de la utilidad total de arriba</div></div>
+  <div class="topbar-badge" style="background:rgba(138,131,117,.2);color:var(--gray2)">${ventasCosto.length}</div>
+</div>
+${ventasCosto.map(r=>`
+<div class="pi" onclick="openDetail('${r.id}')">
+  <div class="av" style="background:rgba(138,131,117,.2);color:var(--gray2)">${r.nombre.charAt(0).toUpperCase()}</div>
+  <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">${r.ciudad||'Sin ciudad'} · ${r.fecha}</div></div>
+  <div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div><span class="bdg costo">A costo</span></div>
+</div>`).join('')}</div>`:''}
 ${prospectos.length?`<div class="card"><div class="ch"><span class="ch-t">🔵 Prospectos </span><button class="ch-a" onclick="S.view='list';setClientType('prospecto')">Ver todos →</button></div>
 <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
   <div><div class="sp-l">Cotizado sin confirmar</div><div style="font-size:18px;font-weight:800;color:var(--purple);margin-top:2px">${fmt(prospTot)}</div></div>
@@ -480,7 +498,7 @@ ${navBar()}
 
 function renderPatientRows(recs){
   if(!recs.length) return`<div class="empty"><span>🔍</span><p>Sin resultados.<br>Prueba otro término o agrega un paciente.</p></div>`;
-  return recs.map(r=>`<div class="pi" onclick="openDetail('${r.id}')"><div class="av${tcli(r)==='prospecto'?' av-p':''}">${r.nombre.charAt(0).toUpperCase()}</div><div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · ${r.ciudad||'—'}</div></div><div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div>${tcli(r)==='prospecto'?`<span class="bdg prospecto">Prospecto</span>`:`<span class="bdg ${estp(r)}">${elbl(estp(r))}</span>`}</div></div>`).join('');
+  return recs.map(r=>`<div class="pi" onclick="openDetail('${r.id}')"><div class="av${tcli(r)==='prospecto'?' av-p':''}">${r.nombre.charAt(0).toUpperCase()}</div><div class="pi-info"><div class="pi-n">${r.nombre}${r.esCosto?' <span class="bdg costo" style="margin-left:4px">A costo</span>':''}</div><div class="pi-s">Ctrl ${r.control||'—'} · ${r.ciudad||'—'}</div></div><div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div>${tcli(r)==='prospecto'?`<span class="bdg prospecto">Prospecto</span>`:`<span class="bdg ${estp(r)}">${elbl(estp(r))}</span>`}</div></div>`).join('');
 }
 
 // Search without full re-render
@@ -552,6 +570,10 @@ function vForm(){
 </div>
 
 <div class="sl">Lente y montura</div>
+<div class="f" style="flex-direction:row;align-items:center;gap:10px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px">
+  <input id="fi-esCosto" type="checkbox" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--purple)" ${f.esCosto?'checked':''} onchange="sfb('esCosto',this.checked)"/>
+  <label style="font-size:13px;color:var(--white);font-weight:600;margin:0">💰 Venta a costo (familiar, sin utilidad)</label>
+</div>
 <div class="fr">
   <div class="f"><label>Laboratorio</label>
   <select id="fi-laboratorio" onchange="sf('laboratorio',this.value)">
@@ -572,7 +594,7 @@ function vForm(){
 </div>
 <div class="fr">
   <div class="f"><label>${f.tipoCliente==='prospecto'?'Valor cotizado':'Total venta'}</label><input id="c-total" readonly class="ro-blue" value="${fmt(tot)}"/></div>
-  <div class="f"><label>Utilidad ${f.tipoCliente==='prospecto'?'proyectada':''}</label><input id="c-utilidad" readonly class="${util>0?'ro-green':util<0?'ro-red':'ro-amber'}" value="${fmt(util)}"/></div>
+  <div class="f"><label>Utilidad ${f.tipoCliente==='prospecto'?'proyectada':f.esCosto?'(a costo)':''}</label><input id="c-utilidad" readonly class="${util>0?'ro-green':util<0?'ro-red':'ro-amber'}" value="${fmt(util)}"/></div>
 </div>
 
 <div class="sl">💵 Abono y saldo</div>
@@ -607,9 +629,10 @@ function vDetail(){
 <div class="ov" onclick="if(event.target===this){S.detail=null;render();}">
 <div class="sh">
 <div class="sh-hnd"></div>
-<div class="sh-head"><div><h2>${p.nombre}</h2><div style="font-size:12px;color:var(--gray2);margin-top:2px">${p.ciudad||''}</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bdg ${isProsp?'prospecto':'activo'}">${isProsp?'🔵 Prospecto':'🟢 Activo'}</span>${!isProsp?`<span class="bdg ${e}">${elbl(e)}</span>`:''}</div></div>
+<div class="sh-head"><div><h2>${p.nombre}</h2><div style="font-size:12px;color:var(--gray2);margin-top:2px">${p.ciudad||''}</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bdg ${isProsp?'prospecto':'activo'}">${isProsp?'🔵 Prospecto':'🟢 Activo'}</span>${!isProsp?`<span class="bdg ${e}">${elbl(e)}</span>`:''}${p.esCosto?`<span class="bdg costo">💰 A costo</span>`:''}</div></div>
 <div class="sh-scr">
 ${isProsp?`<div style="background:var(--purple2);border:1px solid rgba(124,107,168,.3);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--purple);margin-bottom:12px">🔵 Este paciente cotizó pero aún no confirma la compra. Su valor no se cuenta en las ventas activas.</div>`:''}
+${p.esCosto?`<div style="background:rgba(138,131,117,.15);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--gray3);margin-bottom:12px">💰 Esta venta se hizo a costo (familiar), sin utilidad para el negocio. Se cuenta en el total de ventas pero no en la utilidad.</div>`:''}
 <div class="cb">
   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--blue2)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
   <div><div class="cb-l">Control</div><div class="cb-v">${p.control||'—'}</div></div>
@@ -623,7 +646,7 @@ ${dr('Cédula',p.cedula)}${dr('Correo',p.correo)}${dr('Edad',p.edad?p.edad+' añ
   ${['od','oi'].map(eye=>`<div class="fr2"><div class="fc ey">${eye.toUpperCase()}</div>${['esfera','cilindro','eje','adicion'].map(k=>`<div class="fc" style="font-size:13px;color:${p[eye][k]?'var(--white)':'var(--gray)'}">${p[eye][k]||'—'}</div>`).join('')}</div>`).join('')}
 </div>
 <div class="sl2">Venta</div>
-${dr('Laboratorio',p.laboratorio)}${dr('N° Orden lab.',p.ordenLab)}${dr('Tipo de lente',p.tipoLente)}${dr('Montura / Ref.',p.montura)}${dr('Valor lente',fmt(p.valorLente))}${dr('Costo lente',fmt(p.costoLente))}${dr('Valor montura',fmt(p.valorMontura))}${dr('Costo montura',fmt(p.costoMontura))}${dr(isProsp?'Valor cotizado':'Total venta','<span style="color:var(--blue2);font-weight:800">'+fmt(v)+'</span>')}${dr('Costo total','<span style="color:var(--red);font-weight:800">'+fmt(c)+'</span>')}${dr(isProsp?'Utilidad proyectada':'Utilidad','<span style="color:'+(u>0?'var(--green)':u<0?'var(--red)':'var(--amber)')+';font-weight:800">'+fmt(u)+'</span>')}
+${dr('Laboratorio',p.laboratorio)}${dr('N° Orden lab.',p.ordenLab)}${dr('Tipo de lente',p.tipoLente)}${dr('Montura / Ref.',p.montura)}${dr('Valor lente',fmt(p.valorLente))}${dr('Costo lente',fmt(p.costoLente))}${dr('Valor montura',fmt(p.valorMontura))}${dr('Costo montura',fmt(p.costoMontura))}${dr(isProsp?'Valor cotizado':'Total venta','<span style="color:var(--blue2);font-weight:800">'+fmt(v)+'</span>')}${dr('Costo total','<span style="color:var(--red);font-weight:800">'+fmt(c)+'</span>')}${dr(isProsp?'Utilidad proyectada':p.esCosto?'Utilidad (a costo)':'Utilidad','<span style="color:'+(u>0?'var(--green)':u<0?'var(--red)':'var(--amber)')+';font-weight:800">'+fmt(u)+'</span>')}
 <div class="sl2">Pagos</div>
 <div class="sb">
   <div class="sbi"><div class="sbl">Total</div><div class="sbv" style="color:var(--blue2)">${fmt(v)}</div></div>
@@ -676,6 +699,7 @@ function doExport(){
   if(!window.XLSX){showToast('⚠️ Cargando librería, intenta en 2 segundos');return;}
   const rows=S.records.map(p=>({
     'Tipo':tcli(p)==='prospecto'?'Prospecto':'Activo',
+    'A Costo':p.esCosto?'Sí':'No',
     'Control':p.control,'Fecha':p.fecha,'Nombre':p.nombre,'Cédula':p.cedula,
     'Correo':p.correo,'Edad':p.edad,'Teléfono':p.telefono,'Dirección':p.direccion,
     'Ciudad':p.ciudad,
@@ -711,6 +735,7 @@ function doImport(){
         const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
         const imp=rows.map(r=>({
           id:uid(),tipoCliente:String(r['Tipo']||'').toLowerCase().includes('prospecto')?'prospecto':'activo',
+          esCosto:String(r['A Costo']||'').toLowerCase().startsWith('s'),
           control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||tod(),
           cedula:String(r['Cédula']||''),correo:r['Correo']||'',edad:String(r['Edad']||''),telefono:String(r['Teléfono']||''),
           direccion:r['Dirección']||'',ciudad:r['Ciudad']||'',
@@ -739,7 +764,7 @@ function doImport(){
   inp.click();
 }
 
-window.sf=sf;window.sfx=sfx;window.sfn=sfn;window.go=go;
+window.sf=sf;window.sfx=sfx;window.sfn=sfn;window.sfb=sfb;window.go=go;
 window.doSave=doSave;window.doDel=doDel;window.doAbono=doAbono;window.delAbono=delAbono;
 window.openDetail=openDetail;window.openNew=openNew;window.openEdit=openEdit;
 window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.S=S;
