@@ -109,6 +109,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .fc.ey{font-weight:800;color:var(--blue2);font-size:11px;background:rgba(59,130,246,.08);display:flex;align-items:center;justify-content:center}
 .fc input{width:100%;background:transparent;border:none;outline:none;color:var(--white);font-size:14px;text-align:center;font-family:var(--font);padding:0}
 .fc input::placeholder{color:var(--gray);font-size:12px}
+.fr3{display:grid;grid-template-columns:84px 1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+.fr3:last-child{border-bottom:none}
+.mnav{display:flex;align-items:center;gap:8px;padding:12px 16px 4px}
+.mnav button{width:38px;height:38px;flex-shrink:0;background:var(--bg3);border:1.5px solid var(--border2);border-radius:10px;color:var(--gray3);font-size:16px;font-weight:800;cursor:pointer;font-family:var(--font)}
+.mnav input{flex:1;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:10px;color:var(--white);font-family:var(--font);font-size:14px;text-align:center;outline:none}
 /* Saldo summary box */
 .sb{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);display:grid;grid-template-columns:1fr 1fr 1fr;margin-bottom:10px}
 .sbi{padding:12px 8px;text-align:center;border-right:1px solid var(--border)}
@@ -199,6 +204,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 const ventasCol = db.collection('ventas');
+const gastosCol = db.collection('gastos');
 
 const tvp=p=>(parseFloat(p.valorLente)||0)+(parseFloat(p.valorMontura)||0);
 const tcp=p=>(parseFloat(p.costoLente)||0)+(parseFloat(p.costoMontura)||0);
@@ -208,10 +214,10 @@ const tsp=p=>tvp(p)-tap(p);
 const estp=p=>{const v=tvp(p),a=tap(p);if(v===0)return'pending';if(a>=v)return'paid';if(a>0)return'partial';return'pending';};
 const elbl=e=>e==='paid'?'Pagado':e==='partial'?'Parcial':'Pendiente';
 const tcli=p=>p&&p.tipoCliente==='prospecto'?'prospecto':'activo';
-const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
+const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),jornada:'',cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',enviadoLab:false,entregado:false,tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let S={view:'home',records:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod()};
+let S={view:'home',records:[],gastos:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod(),dashTab:'fin',dashMonth:new Date().toISOString().slice(0,7),jornadaOpen:null,gDesc:'',gMonto:'',gFecha:tod()};
 const app=document.getElementById('app');
 let tTimer=null;
 
@@ -307,7 +313,7 @@ function go(partial){
 
 // Read all live input values from DOM into S.form before save / navigate
 function flushForm(){
-  const ids=['tipoCliente','control','nombre','fecha','cedula','correo','edad','telefono','direccion','ciudad','laboratorio','ordenLab','tipoLente','valorLente','costoLente','montura','valorMontura','costoMontura','abonoInicial'];
+  const ids=['tipoCliente','control','nombre','fecha','jornada','cedula','correo','edad','telefono','direccion','ciudad','laboratorio','ordenLab','tipoLente','valorLente','costoLente','montura','valorMontura','costoMontura','abonoInicial'];
   ids.forEach(k=>{const el=document.getElementById('fi-'+k);if(el)S.form[k]=el.value;});
   // Formula
   ['od','oi'].forEach(eye=>{
@@ -381,6 +387,18 @@ async function doConvert(id){
     await ventasCol.doc(id).set(upd);
     S.detail=upd;
     showToast('✅ Convertido a Activo');render();
+  }catch(e){
+    showToast('❌ No se pudo actualizar.');
+  }
+}
+
+async function doToggleField(id,field){
+  const p=S.records.find(r=>r.id===id);
+  if(!p)return;
+  const upd={...p,[field]:!p[field]};
+  try{
+    await ventasCol.doc(id).set(upd);
+    S.detail=upd;render();
   }catch(e){
     showToast('❌ No se pudo actualizar.');
   }
@@ -550,6 +568,7 @@ function vForm(){
   <div class="f"><label>N° Control (tarjeta)</label><input id="fi-control" value="${esc(f.control)}" onchange="sf('control',this.value)" placeholder="001"/></div>
   <div class="f"><label>Fecha de consulta</label><input id="fi-fecha" type="date" value="${f.fecha}" onchange="sf('fecha',this.value)"/></div>
 </div>
+<div class="f"><label>Jornada / Evento (opcional)</label><input id="fi-jornada" value="${esc(f.jornada||'')}" onchange="sf('jornada',this.value)" placeholder="Ej: Jornada 15, Feria del barrio…"/></div>
 
 <div class="sl">Datos del paciente</div>
 <div class="f"><label>Nombre completo *</label><input id="fi-nombre" value="${esc(f.nombre)}" onchange="sf('nombre',this.value)" placeholder="Nombre completo"/></div>
@@ -581,6 +600,16 @@ function vForm(){
     ${['Sol de Oro','Servioptica','Vértice','Optiservices'].map(t=>`<option value="${t}" ${f.laboratorio===t?'selected':''}>${t}</option>`).join('')}
   </select></div>
   <div class="f"><label>N° Orden laboratorio</label><input id="fi-ordenLab" value="${esc(f.ordenLab)}" onchange="sf('ordenLab',this.value)" placeholder="ORD-001"/></div>
+</div>
+<div class="fr">
+  <div class="f" style="flex-direction:row;align-items:center;gap:8px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px">
+    <input id="fi-enviadoLab" type="checkbox" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--blue)" ${f.enviadoLab?'checked':''} onchange="sfb('enviadoLab',this.checked)"/>
+    <label style="font-size:12.5px;color:var(--white);font-weight:600;margin:0">📦 Enviado a lab</label>
+  </div>
+  <div class="f" style="flex-direction:row;align-items:center;gap:8px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px">
+    <input id="fi-entregado" type="checkbox" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--green)" ${f.entregado?'checked':''} onchange="sfb('entregado',this.checked)"/>
+    <label style="font-size:12.5px;color:var(--white);font-weight:600;margin:0">✅ Entregado</label>
+  </div>
 </div>
 <div class="f"><label>Tipo de lente</label><input id="fi-tipoLente" value="${esc(f.tipoLente)}" onchange="sf('tipoLente',this.value)" placeholder="Ej: Monofocal, Progresivo…"/></div>
 <div class="fr">
@@ -633,6 +662,11 @@ function vDetail(){
 <div class="sh-scr">
 ${isProsp?`<div style="background:var(--purple2);border:1px solid rgba(124,107,168,.3);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--purple);margin-bottom:12px">🔵 Este paciente cotizó pero aún no confirma la compra. Su valor no se cuenta en las ventas activas.</div>`:''}
 ${p.esCosto?`<div style="background:rgba(138,131,117,.15);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--gray3);margin-bottom:12px">💰 Esta venta se hizo a costo (familiar), sin utilidad para el negocio. Se cuenta en el total de ventas pero no en la utilidad.</div>`:''}
+${p.jornada?`<div class="cb" style="background:var(--purple2);border-color:rgba(124,107,168,.3)"><span style="font-size:16px">🗓️</span><div><div class="cb-l" style="color:var(--purple)">Jornada</div><div class="cb-v" style="font-size:15px">${esc(p.jornada)}</div></div></div>`:''}
+<div style="display:flex;gap:8px;margin-bottom:12px">
+  <button onclick="doToggleField('${p.id}','enviadoLab')" style="flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid ${p.enviadoLab?'var(--blue)':'var(--border2)'};background:${p.enviadoLab?'var(--blue3)':'var(--bg3)'};color:${p.enviadoLab?'var(--blue2)':'var(--gray2)'};font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer">📦 ${p.enviadoLab?'Enviado a lab':'Sin enviar a lab'}</button>
+  <button onclick="doToggleField('${p.id}','entregado')" style="flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid ${p.entregado?'var(--green)':'var(--border2)'};background:${p.entregado?'var(--green2)':'var(--bg3)'};color:${p.entregado?'var(--green)':'var(--gray2)'};font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer">✅ ${p.entregado?'Entregado':'Sin entregar'}</button>
+</div>
 <div class="cb">
   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--blue2)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
   <div><div class="cb-l">Control</div><div class="cb-v">${p.control||'—'}</div></div>
@@ -677,11 +711,179 @@ ${s>0?`<div class="ab-form">
 
 function dr(label,value){return`<div class="dr"><span class="dr-l">${label}</span><span class="dr-v">${value||'—'}</span></div>`;}
 
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const monthLabel=m=>{const[y,mo]=m.split('-');return MESES[(+mo)-1]+' '+y;};
+
+function setDashTab(t){S.dashTab=t;render();}
+function setDashMonth(v){if(v)S.dashMonth=v;render();}
+function shiftMonth(delta){
+  const[y,m]=S.dashMonth.split('-').map(Number);
+  const d=new Date(y,m-1+delta,1);
+  S.dashMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  render();
+}
+
+async function doAddGasto(){
+  const desc=(S.gDesc||'').trim();
+  const monto=parseFloat(S.gMonto)||0;
+  const fecha=S.gFecha||tod();
+  if(!desc||monto<=0){showToast('⚠️ Completa descripción y valor');return;}
+  const g={id:uid(),descripcion:desc,monto,fecha};
+  try{
+    await gastosCol.doc(g.id).set(g);
+    S.gDesc='';S.gMonto='';
+    showToast('✅ Gasto agregado');render();
+  }catch(e){
+    showToast('❌ No se pudo agregar el gasto');
+  }
+}
+async function delGasto(id){
+  if(!confirm('¿Eliminar este gasto?'))return;
+  try{
+    await gastosCol.doc(id).delete();
+    showToast('🗑️ Gasto eliminado');render();
+  }catch(e){
+    showToast('❌ No se pudo eliminar');
+  }
+}
+function toggleJornada(encName){
+  const name=decodeURIComponent(encName);
+  S.jornadaOpen=S.jornadaOpen===name?null:name;
+  render();
+}
+
+function vDashboard(){
+  return`
+<div class="screen">
+<div class="topbar"><div><div class="topbar-title">📊 Dashboard</div><div class="topbar-sub">Finanzas y jornadas</div></div></div>
+<div class="scroll">
+<div class="typetabs">
+  <button class="typetab${S.dashTab==='fin'?' on-a':''}" onclick="setDashTab('fin')">💰 Finanzas</button>
+  <button class="typetab${S.dashTab==='jorn'?' on-p':''}" onclick="setDashTab('jorn')">🗓️ Jornadas</button>
+</div>
+${S.dashTab==='fin'?vDashFin():vDashJornadas()}
+<div style="height:20px"></div>
+</div>
+${navBar()}
+</div>`;
+}
+
+function vDashFin(){
+  const mes=S.dashMonth;
+  const recs=S.records.filter(r=>tcli(r)==='activo'&&(r.fecha||'').slice(0,7)===mes);
+  const vL=recs.reduce((s,r)=>s+(parseFloat(r.valorLente)||0),0);
+  const vM=recs.reduce((s,r)=>s+(parseFloat(r.valorMontura)||0),0);
+  const cL=recs.reduce((s,r)=>s+(parseFloat(r.costoLente)||0),0);
+  const cM=recs.reduce((s,r)=>s+(parseFloat(r.costoMontura)||0),0);
+  const uL=recs.reduce((s,r)=>s+(r.esCosto?0:(parseFloat(r.valorLente)||0)-(parseFloat(r.costoLente)||0)),0);
+  const uM=recs.reduce((s,r)=>s+(r.esCosto?0:(parseFloat(r.valorMontura)||0)-(parseFloat(r.costoMontura)||0)),0);
+  const totVenta=vL+vM,totCosto=cL+cM,utilBruta=uL+uM;
+  const cobMes=recs.reduce((s,r)=>s+tap(r),0);
+  const penMes=recs.reduce((s,r)=>s+Math.max(0,tsp(r)),0);
+  const gastosMes=S.gastos.filter(g=>(g.fecha||'').slice(0,7)===mes).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const totGastos=gastosMes.reduce((s,g)=>s+(parseFloat(g.monto)||0),0);
+  const utilNeta=utilBruta-totGastos;
+  return`
+<div class="mnav">
+  <button onclick="shiftMonth(-1)">‹</button>
+  <input type="month" value="${mes}" onchange="setDashMonth(this.value)"/>
+  <button onclick="shiftMonth(1)">›</button>
+</div>
+<div class="card" style="border-top:2.5px solid ${utilNeta>=0?'var(--green)':'var(--red)'}">
+  <div style="padding:18px 16px;text-align:center">
+    <div class="sp-l">Utilidad neta · ${monthLabel(mes)}</div>
+    <div style="font-size:30px;font-weight:800;color:${utilNeta>=0?'var(--green)':'var(--red)'};margin-top:6px">${fmt(utilNeta)}</div>
+    <div style="font-size:11px;color:var(--gray2);margin-top:6px">${fmt(utilBruta)} utilidad bruta − ${fmt(totGastos)} gastos</div>
+  </div>
+</div>
+<div class="stat-grid">
+  <div class="stat-pill sp-b"><div class="sp-l">Total ventas</div><div class="sp-v" style="color:var(--blue2)">${fmt(totVenta)}</div><div class="sp-s">${recs.length} pacientes</div></div>
+  <div class="stat-pill sp-g"><div class="sp-l">Cobrado</div><div class="sp-v" style="color:var(--green)">${fmt(cobMes)}</div><div class="sp-s">recibido</div></div>
+  <div class="stat-pill sp-r"><div class="sp-l">Por cobrar</div><div class="sp-v" style="color:var(--red)">${fmt(penMes)}</div><div class="sp-s">pendiente</div></div>
+  <div class="stat-pill sp-a"><div class="sp-l">Utilidad bruta</div><div class="sp-v" style="color:var(--amber)">${fmt(utilBruta)}</div><div class="sp-s">ventas − costo</div></div>
+</div>
+<div class="card">
+  <div class="ch"><span class="ch-t">📐 Ventas por categoría</span></div>
+  <div style="padding:12px 16px">
+  <div class="ftbl">
+    <div class="fr3"><div class="fc hd"></div><div class="fc hd">Venta</div><div class="fc hd">Costo</div><div class="fc hd">Utilidad</div></div>
+    <div class="fr3"><div class="fc ey">👓 Lentes</div><div class="fc">${fmt(vL)}</div><div class="fc" style="color:var(--red)">${fmt(cL)}</div><div class="fc" style="color:${uL>=0?'var(--green)':'var(--red)'};font-weight:800">${fmt(uL)}</div></div>
+    <div class="fr3"><div class="fc ey">🕶️ Monturas</div><div class="fc">${fmt(vM)}</div><div class="fc" style="color:var(--red)">${fmt(cM)}</div><div class="fc" style="color:${uM>=0?'var(--green)':'var(--red)'};font-weight:800">${fmt(uM)}</div></div>
+    <div class="fr3" style="background:rgba(255,255,255,.03)"><div class="fc ey" style="color:var(--blue2)">Total</div><div class="fc" style="font-weight:800">${fmt(totVenta)}</div><div class="fc" style="color:var(--red);font-weight:800">${fmt(totCosto)}</div><div class="fc" style="color:${utilBruta>=0?'var(--green)':'var(--red)'};font-weight:800">${fmt(utilBruta)}</div></div>
+  </div>
+  </div>
+</div>
+<div class="card">
+  <div class="ch"><span class="ch-t">📝 Gastos del mes</span><span style="font-size:13px;font-weight:800;color:var(--red)">${fmt(totGastos)}</span></div>
+  ${gastosMes.length?gastosMes.map(g=>`
+  <div class="pi" style="cursor:default">
+    <div class="pi-info"><div class="pi-n">${esc(g.descripcion)}</div><div class="pi-s">${g.fecha}</div></div>
+    <div class="pi-r" style="display:flex;align-items:center;gap:10px">
+      <div class="pi-amt" style="color:var(--red)">${fmt(g.monto)}</div>
+      <button onclick="delGasto('${g.id}')" style="background:none;border:none;color:var(--gray);font-size:17px;cursor:pointer;padding:2px 4px">✕</button>
+    </div>
+  </div>`).join(''):`<div style="padding:20px 16px;text-align:center;color:var(--gray);font-size:12.5px">Sin gastos registrados este mes.</div>`}
+  <div style="padding:14px 16px;border-top:1px solid var(--border)">
+    <div class="fr">
+      <div class="f"><label>Descripción</label><input id="gx-desc" placeholder="Arriendo, servicios…" value="${esc(S.gDesc)}" oninput="S.gDesc=this.value"/></div>
+      <div class="f"><label>Valor ($)</label><input id="gx-monto" type="number" inputmode="numeric" placeholder="0" value="${esc(S.gMonto)}" oninput="S.gMonto=this.value"/></div>
+    </div>
+    <div class="f"><label>Fecha</label><input id="gx-fecha" type="date" value="${S.gFecha}" onchange="S.gFecha=this.value"/></div>
+    <button class="save-btn" style="font-size:14px;padding:12px" onclick="doAddGasto()">+ Agregar gasto</button>
+  </div>
+</div>`;
+}
+
+function vDashJornadas(){
+  const withJ=S.records.filter(r=>r.jornada&&r.jornada.trim());
+  const groups={};
+  withJ.forEach(r=>{(groups[r.jornada]=groups[r.jornada]||[]).push(r);});
+  const names=Object.keys(groups).sort((a,b)=>{
+    const ma=groups[a].reduce((m,r)=>r.fecha>m?r.fecha:m,'');
+    const mb=groups[b].reduce((m,r)=>r.fecha>m?r.fecha:m,'');
+    return mb.localeCompare(ma);
+  });
+  if(!names.length) return`<div class="empty"><span>🗓️</span><p>Aún no has asignado pacientes a una jornada.<br>Agrega el campo "Jornada" al crear o editar un paciente.</p></div>`;
+  return names.map(name=>{
+    const grp=groups[name];
+    const tot=grp.reduce((s,r)=>s+tvp(r),0);
+    const cob=grp.reduce((s,r)=>s+tap(r),0);
+    const pen=grp.reduce((s,r)=>s+Math.max(0,tsp(r)),0);
+    const entregados=grp.filter(r=>r.entregado).length;
+    const enviados=grp.filter(r=>r.enviadoLab).length;
+    const isOpen=S.jornadaOpen===name;
+    const enc=encodeURIComponent(name);
+    return`
+<div class="card">
+  <div class="ch" style="cursor:pointer" onclick="toggleJornada('${enc}')">
+    <span class="ch-t">🗓️ ${esc(name)}</span>
+    <span class="ch-a">${isOpen?'▲ Ocultar':'▼ '+grp.length+' pac.'}</span>
+  </div>
+  <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-bottom:1px solid var(--border)">
+    <div><div class="sp-l">Vendido</div><div style="font-size:14px;font-weight:800;color:var(--blue2)">${fmt(tot)}</div></div>
+    <div><div class="sp-l">Cobrado</div><div style="font-size:14px;font-weight:800;color:var(--green)">${fmt(cob)}</div></div>
+    <div><div class="sp-l">Falta cobrar</div><div style="font-size:14px;font-weight:800;color:${pen>0?'var(--red)':'var(--green)'}">${fmt(pen)}</div></div>
+  </div>
+  <div style="padding:10px 16px;display:flex;gap:16px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray2)">
+    <span>📦 En lab: <b style="color:var(--white)">${enviados}/${grp.length}</b></span>
+    <span>✅ Entregados: <b style="color:var(--white)">${entregados}/${grp.length}</b></span>
+  </div>
+  ${isOpen?[...grp].sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(r=>`
+  <div class="pi" onclick="openDetail('${r.id}')">
+    <div class="av${tcli(r)==='prospecto'?' av-p':''}">${r.nombre.charAt(0).toUpperCase()}</div>
+    <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">${tsp(r)>0?fmt(tsp(r))+' pendiente':'Pagado'} · ${r.enviadoLab?'📦 En lab':'📦 Sin enviar'} · ${r.entregado?'✅ Entregado':'⏳ Sin entregar'}</div></div>
+    <div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div></div>
+  </div>`).join(''):''}
+</div>`;
+  }).join('');
+}
+
 function navBar(){
   const v=S.view;
   return`<div class="bottomnav">
 <button class="bn${v==='home'?' on':''}" onclick="go({view:'home'})"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
 <button class="bn${v==='list'?' on':''}" onclick="go({view:'list'})"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pacientes</button>
+<button class="bn${v==='dashboard'?' on':''}" onclick="go({view:'dashboard'})"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Dashboard</button>
 <button class="bn" onclick="openNew()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nuevo</button>
 </div>`;
 }
@@ -690,6 +892,7 @@ function render(){
   let html='';
   if(S.view==='home')      html=vHome();
   else if(S.view==='list') html=vList();
+  else if(S.view==='dashboard') html=vDashboard();
   else                     html=vForm();
   const sheet=S.detail?vDetail():'';
   app.innerHTML=html+sheet;
@@ -700,12 +903,12 @@ function doExport(){
   const rows=S.records.map(p=>({
     'Tipo':tcli(p)==='prospecto'?'Prospecto':'Activo',
     'A Costo':p.esCosto?'Sí':'No',
-    'Control':p.control,'Fecha':p.fecha,'Nombre':p.nombre,'Cédula':p.cedula,
+    'Control':p.control,'Fecha':p.fecha,'Jornada':p.jornada||'','Nombre':p.nombre,'Cédula':p.cedula,
     'Correo':p.correo,'Edad':p.edad,'Teléfono':p.telefono,'Dirección':p.direccion,
     'Ciudad':p.ciudad,
     'OD Esfera':p.od.esfera,'OD Cilindro':p.od.cilindro,'OD Eje':p.od.eje,'OD Adición':p.od.adicion,
     'OI Esfera':p.oi.esfera,'OI Cilindro':p.oi.cilindro,'OI Eje':p.oi.eje,'OI Adición':p.oi.adicion,
-    'Laboratorio':p.laboratorio,'N° Orden Lab.':p.ordenLab,
+    'Laboratorio':p.laboratorio,'N° Orden Lab.':p.ordenLab,'Enviado a Lab':p.enviadoLab?'Sí':'No','Entregado':p.entregado?'Sí':'No',
     'Tipo Lente':p.tipoLente,'Valor Lente':parseFloat(p.valorLente)||0,'Costo Lente':parseFloat(p.costoLente)||0,
     'Montura':p.montura,'Valor Montura':parseFloat(p.valorMontura)||0,'Costo Montura':parseFloat(p.costoMontura)||0,
     'Total Venta':tvp(p),'Costo Total':tcp(p),'Utilidad':tup(p),
@@ -736,12 +939,14 @@ function doImport(){
         const imp=rows.map(r=>({
           id:uid(),tipoCliente:String(r['Tipo']||'').toLowerCase().includes('prospecto')?'prospecto':'activo',
           esCosto:String(r['A Costo']||'').toLowerCase().startsWith('s'),
-          control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||tod(),
+          control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||tod(),jornada:r['Jornada']||'',
           cedula:String(r['Cédula']||''),correo:r['Correo']||'',edad:String(r['Edad']||''),telefono:String(r['Teléfono']||''),
           direccion:r['Dirección']||'',ciudad:r['Ciudad']||'',
           od:{esfera:String(r['OD Esfera']||''),cilindro:String(r['OD Cilindro']||''),eje:String(r['OD Eje']||''),adicion:String(r['OD Adición']||'')},
           oi:{esfera:String(r['OI Esfera']||''),cilindro:String(r['OI Cilindro']||''),eje:String(r['OI Eje']||''),adicion:String(r['OI Adición']||'')},
           laboratorio:r['Laboratorio']||'',ordenLab:String(r['N° Orden Lab.']||''),
+          enviadoLab:String(r['Enviado a Lab']||'').toLowerCase().startsWith('s'),
+          entregado:String(r['Entregado']||'').toLowerCase().startsWith('s'),
           tipoLente:r['Tipo Lente']||'',valorLente:r['Valor Lente']||'',costoLente:r['Costo Lente']||'',
           montura:r['Montura']||'',valorMontura:r['Valor Montura']||'',costoMontura:r['Costo Montura']||'',
           abonoInicial:'',
@@ -767,8 +972,10 @@ function doImport(){
 window.sf=sf;window.sfx=sfx;window.sfn=sfn;window.sfb=sfb;window.go=go;
 window.doSave=doSave;window.doDel=doDel;window.doAbono=doAbono;window.delAbono=delAbono;
 window.openDetail=openDetail;window.openNew=openNew;window.openEdit=openEdit;
-window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.S=S;
+window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.doToggleField=doToggleField;window.S=S;
 window.doExport=doExport;window.doImport=doImport;
+window.setDashTab=setDashTab;window.setDashMonth=setDashMonth;window.shiftMonth=shiftMonth;
+window.doAddGasto=doAddGasto;window.delGasto=delGasto;window.toggleJornada=toggleJornada;
 window.doLogout=()=>auth.signOut();
 
 // ── Sesión y sincronización en tiempo real ──────────────────────────────────
@@ -780,6 +987,7 @@ const loginBtn=document.getElementById('loginBtn');
 const loginError=document.getElementById('loginError');
 
 let ventasUnsubscribe=null;
+let gastosUnsubscribe=null;
 
 function startVentasListener(){
   return ventasCol.onSnapshot(snapshot=>{
@@ -790,16 +998,27 @@ function startVentasListener(){
   });
 }
 
+function startGastosListener(){
+  return gastosCol.onSnapshot(snapshot=>{
+    S.gastos=snapshot.docs.map(doc=>doc.data());
+    render();
+  },err=>{
+    showToast('❌ No se pudo conectar los gastos');
+  });
+}
+
 auth.onAuthStateChanged(user=>{
   if(user){
     loginScreen.style.display='none';
     app.style.display='block';
     if(!ventasUnsubscribe) ventasUnsubscribe=startVentasListener();
+    if(!gastosUnsubscribe) gastosUnsubscribe=startGastosListener();
   }else{
     app.style.display='none';
     loginScreen.style.display='flex';
     if(ventasUnsubscribe){ventasUnsubscribe();ventasUnsubscribe=null;}
-    S.records=[];S.view='home';S.detail=null;
+    if(gastosUnsubscribe){gastosUnsubscribe();gastosUnsubscribe=null;}
+    S.records=[];S.gastos=[];S.view='home';S.detail=null;
   }
 });
 
