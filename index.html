@@ -62,10 +62,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .bdg{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:700}
 .bdg.paid{background:var(--green2);color:var(--green)}.bdg.partial{background:var(--amber2);color:var(--amber)}.bdg.pending{background:var(--red2);color:var(--red)}.bdg.prospecto{background:var(--purple2);color:var(--purple)}.bdg.activo{background:var(--green2);color:var(--green)}.bdg.costo{background:rgba(138,131,117,.2);color:var(--gray2)}
 .av-p{background:var(--purple2)!important;color:var(--purple)!important}
-.typetabs{display:flex;gap:8px;padding:12px 16px 4px}
-.typetab{flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--gray2);font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;text-align:center}
+.typetabs{display:flex;gap:8px;padding:12px 16px 4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.typetabs::-webkit-scrollbar{display:none}
+.typetab{flex:1 0 auto;min-width:82px;padding:11px 8px;border-radius:10px;border:1.5px solid var(--border2);background:var(--bg3);color:var(--gray2);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;text-align:center;white-space:nowrap}
 .typetab.on-a{background:var(--green2);border-color:var(--green);color:var(--green)}
 .typetab.on-p{background:var(--purple2);border-color:var(--purple);color:var(--purple)}
+.typetab.on-m{background:var(--amber2);border-color:var(--amber);color:var(--amber)}
+.typetab.on-l{background:var(--blue3);border-color:var(--blue);color:var(--blue2)}
 .pb{background:rgba(255,255,255,.08);border-radius:99px;height:5px}
 .pf{height:100%;border-radius:99px;background:var(--blue)}
 .pf.done{background:var(--green)}.pf.mid{background:var(--amber)}
@@ -217,7 +220,7 @@ const tcli=p=>p&&p.tipoCliente==='prospecto'?'prospecto':'activo';
 const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),jornada:'',cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',enviadoLab:false,entregado:false,tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let S={view:'home',records:[],gastos:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod(),dashTab:'fin',dashMonth:new Date().toISOString().slice(0,7),jornadaOpen:null,gDesc:'',gMonto:'',gFecha:tod()};
+let S={view:'home',records:[],gastos:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod(),dashTab:'fin',dashMonth:new Date().toISOString().slice(0,7),jornadaOpen:null,gDesc:'',gMonto:'',gFecha:tod(),dashSearch:'',dashMFilter:'all'};
 const app=document.getElementById('app');
 let tTimer=null;
 
@@ -760,8 +763,10 @@ function vDashboard(){
 <div class="typetabs">
   <button class="typetab${S.dashTab==='fin'?' on-a':''}" onclick="setDashTab('fin')">💰 Finanzas</button>
   <button class="typetab${S.dashTab==='jorn'?' on-p':''}" onclick="setDashTab('jorn')">🗓️ Jornadas</button>
+  <button class="typetab${S.dashTab==='mont'?' on-m':''}" onclick="setDashTab('mont')">🕶️ Monturas</button>
+  <button class="typetab${S.dashTab==='lab'?' on-l':''}" onclick="setDashTab('lab')">🏢 Labs</button>
 </div>
-${S.dashTab==='fin'?vDashFin():vDashJornadas()}
+${S.dashTab==='fin'?vDashFin():S.dashTab==='jorn'?vDashJornadas():S.dashTab==='mont'?vDashMonturas():vDashLabs()}
 <div style="height:20px"></div>
 </div>
 ${navBar()}
@@ -849,20 +854,28 @@ function vDashJornadas(){
     const tot=grp.reduce((s,r)=>s+tvp(r),0);
     const cob=grp.reduce((s,r)=>s+tap(r),0);
     const pen=grp.reduce((s,r)=>s+Math.max(0,tsp(r)),0);
+    const costo=grp.reduce((s,r)=>s+tcp(r),0);
+    const util=grp.reduce((s,r)=>s+tup(r),0);
+    const margen=tot>0?(util/tot)*100:0;
     const entregados=grp.filter(r=>r.entregado).length;
     const enviados=grp.filter(r=>r.enviadoLab).length;
     const isOpen=S.jornadaOpen===name;
     const enc=encodeURIComponent(name);
     return`
-<div class="card">
+<div class="card" style="border-top:2.5px solid ${util>=0?'var(--purple)':'var(--red)'}">
   <div class="ch" style="cursor:pointer" onclick="toggleJornada('${enc}')">
     <span class="ch-t">🗓️ ${esc(name)}</span>
     <span class="ch-a">${isOpen?'▲ Ocultar':'▼ '+grp.length+' pac.'}</span>
   </div>
-  <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-bottom:1px solid var(--border)">
+  <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;border-bottom:1px solid var(--border)">
     <div><div class="sp-l">Vendido</div><div style="font-size:14px;font-weight:800;color:var(--blue2)">${fmt(tot)}</div></div>
     <div><div class="sp-l">Cobrado</div><div style="font-size:14px;font-weight:800;color:var(--green)">${fmt(cob)}</div></div>
     <div><div class="sp-l">Falta cobrar</div><div style="font-size:14px;font-weight:800;color:${pen>0?'var(--red)':'var(--green)'}">${fmt(pen)}</div></div>
+    <div><div class="sp-l">Utilidad</div><div style="font-size:14px;font-weight:800;color:${util>=0?'var(--purple)':'var(--red)'}">${fmt(util)}</div></div>
+  </div>
+  <div style="padding:10px 16px;display:flex;justify-content:space-between;border-bottom:1px solid var(--border);font-size:11px;color:var(--gray2)">
+    <span>Costo total: <b style="color:var(--white)">${fmt(costo)}</b></span>
+    <span>Margen: <b style="color:${util>=0?'var(--purple)':'var(--red)'}">${margen.toFixed(1)}%</b></span>
   </div>
   <div style="padding:10px 16px;display:flex;gap:16px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray2)">
     <span>📦 En lab: <b style="color:var(--white)">${enviados}/${grp.length}</b></span>
@@ -874,6 +887,97 @@ function vDashJornadas(){
     <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">${tsp(r)>0?fmt(tsp(r))+' pendiente':'Pagado'} · ${r.enviadoLab?'📦 En lab':'📦 Sin enviar'} · ${r.entregado?'✅ Entregado':'⏳ Sin entregar'}</div></div>
     <div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div></div>
   </div>`).join(''):''}
+</div>`;
+  }).join('');
+}
+
+// ── Monturas: vista rápida para cruzar contra el inventario ──────────────────
+function filterMonturaRecs(){
+  const q=(S.dashSearch||'').toLowerCase();
+  return S.records.filter(r=>tcli(r)==='activo').filter(r=>{
+    const tieneMontura=!!(r.montura&&r.montura.trim());
+    const matchQ=!q||r.nombre.toLowerCase().includes(q)||(r.montura||'').toLowerCase().includes(q)||(r.control||'').toLowerCase().includes(q);
+    const matchF=S.dashMFilter==='all'||(S.dashMFilter==='with'&&tieneMontura)||(S.dashMFilter==='missing'&&!tieneMontura);
+    return matchQ&&matchF;
+  }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+}
+
+function renderMonturaRows(recs){
+  if(!recs.length) return`<div class="empty"><span>🕶️</span><p>Sin resultados.<br>Prueba otro término o cambia el filtro.</p></div>`;
+  return recs.map(r=>{
+    const tieneMontura=!!(r.montura&&r.montura.trim());
+    return`
+<div class="pi" onclick="openDetail('${r.id}')">
+  <div class="av${tieneMontura?'':' av-r'}">${r.nombre.charAt(0).toUpperCase()}</div>
+  <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · ${r.fecha}${tieneMontura?' · '+esc(r.montura):''}</div></div>
+  <div class="pi-r">${tieneMontura?`<div class="pi-amt">${fmt(r.valorMontura)}</div>`:`<span class="bdg pending">⚠️ Sin montura</span>`}</div>
+</div>`;
+  }).join('');
+}
+
+function filterMonturas(){
+  const el=document.getElementById('montura-list');
+  if(el) el.innerHTML=renderMonturaRows(filterMonturaRecs());
+}
+
+function setDashMFilter(v){
+  S.dashMFilter=v;
+  document.querySelectorAll('#app .chips .chip[data-mf]').forEach(c=>{
+    c.classList.toggle('on',c.getAttribute('data-mf')===v);
+  });
+  filterMonturas();
+}
+
+function vDashMonturas(){
+  const base=S.records.filter(r=>tcli(r)==='activo');
+  const conM=base.filter(r=>r.montura&&r.montura.trim()).length;
+  const sinM=base.length-conM;
+  return`
+<div class="stat-grid" style="padding:14px 16px 4px">
+  <div class="stat-pill sp-g"><div class="sp-l">Con montura</div><div class="sp-v" style="color:var(--green)">${conM}</div><div class="sp-s">registrada</div></div>
+  <div class="stat-pill sp-r"><div class="sp-l">Sin montura</div><div class="sp-v" style="color:var(--red)">${sinM}</div><div class="sp-s">revisar</div></div>
+</div>
+<div class="sw">
+  <svg class="si" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  <input placeholder="Nombre, control o montura…" value="${esc(S.dashSearch)}" oninput="S.dashSearch=this.value;filterMonturas()" type="search" id="mont-search-input"/>
+</div>
+<div class="chips">
+  ${[['all','Todos'],['with','Con montura'],['missing','Sin montura']].map(([v,l])=>`<button class="chip${S.dashMFilter===v?' on':''}" data-mf="${v}" onclick="setDashMFilter('${v}')">${l}</button>`).join('')}
+</div>
+<div class="card" style="margin-top:0" id="montura-list">
+${renderMonturaRows(filterMonturaRecs())}
+</div>`;
+}
+
+// ── Laboratorios: pacientes agrupados por laboratorio ─────────────────────────
+function vDashLabs(){
+  const withLab=S.records.filter(r=>r.laboratorio&&r.laboratorio.trim());
+  const groups={};
+  withLab.forEach(r=>{(groups[r.laboratorio]=groups[r.laboratorio]||[]).push(r);});
+  const names=Object.keys(groups).sort((a,b)=>{
+    const pa=groups[a].filter(r=>!r.enviadoLab).length,pb=groups[b].filter(r=>!r.enviadoLab).length;
+    return pb-pa||a.localeCompare(b);
+  });
+  if(!names.length) return`<div class="empty"><span>🏢</span><p>Aún no has asignado un laboratorio a ningún paciente.<br>Selecciónalo al crear o editar el paciente.</p></div>`;
+  return names.map(name=>{
+    const grp=[...groups[name]].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    const costoTot=grp.reduce((s,r)=>s+(parseFloat(r.costoLente)||0),0);
+    const enviados=grp.filter(r=>r.enviadoLab).length;
+    const entregados=grp.filter(r=>r.entregado).length;
+    return`
+<div class="card">
+  <div class="ch"><span class="ch-t">🏢 ${esc(name)}</span><span class="topbar-badge" style="background:var(--blue3);color:var(--blue2)">${grp.length}</span></div>
+  <div style="padding:10px 16px;display:flex;justify-content:space-between;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray2)">
+    <span>Costo lentes: <b style="color:var(--white)">${fmt(costoTot)}</b></span>
+    <span>📦 Enviados: <b style="color:var(--white)">${enviados}/${grp.length}</b></span>
+    <span>✅ Entregados: <b style="color:var(--white)">${entregados}/${grp.length}</b></span>
+  </div>
+  ${grp.map(r=>`
+  <div class="pi" onclick="openDetail('${r.id}')">
+    <div class="av${tcli(r)==='prospecto'?' av-p':''}">${r.nombre.charAt(0).toUpperCase()}</div>
+    <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · Costo lente: ${fmt(r.costoLente)}</div></div>
+    <div class="pi-r"><span class="bdg ${r.enviadoLab?'paid':'pending'}">${r.enviadoLab?'📦 Enviado':'⏳ Sin enviar'}</span></div>
+  </div>`).join('')}
 </div>`;
   }).join('');
 }
@@ -976,6 +1080,7 @@ window.filterList=filterList;window.setFilter=setFilter;window.setClientType=set
 window.doExport=doExport;window.doImport=doImport;
 window.setDashTab=setDashTab;window.setDashMonth=setDashMonth;window.shiftMonth=shiftMonth;
 window.doAddGasto=doAddGasto;window.delGasto=delGasto;window.toggleJornada=toggleJornada;
+window.filterMonturas=filterMonturas;window.setDashMFilter=setDashMFilter;
 window.doLogout=()=>auth.signOut();
 
 // ── Sesión y sincronización en tiempo real ──────────────────────────────────
