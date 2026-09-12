@@ -4,22 +4,22 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="theme-color" content="#0F0D09"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#F3F5F8"/>
 <title>HR Visión Empresarial · Óptica</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0F0D09;--bg2:#1B1811;--bg3:#241F16;
-  --blue:#B8892B;--blue2:#E7CB7C;--blue3:rgba(184,137,43,0.16);
-  --green:#3C8B5C;--green2:rgba(60,139,92,0.15);
-  --amber:#D19A2B;--amber2:rgba(209,154,43,0.15);
-  --red:#B14A3A;--red2:rgba(177,74,58,0.15);
-  --purple:#7C6BA8;--purple2:rgba(124,107,168,0.15);
-  --white:#F6F3EC;--gray:#8A8375;--gray2:#B5AD9A;--gray3:#DCD6C8;
-  --border:rgba(231,203,124,0.12);--border2:rgba(231,203,124,0.22);
+  --bg:#F3F5F8;--bg2:#FFFFFF;--bg3:#EEF1F6;
+  --blue:#2563EB;--blue2:#1D4ED8;--blue3:rgba(37,99,235,0.10);
+  --green:#2F8F5B;--green2:rgba(47,143,91,0.12);
+  --amber:#B7791F;--amber2:rgba(183,121,31,0.13);
+  --red:#C0392B;--red2:rgba(192,57,43,0.12);
+  --purple:#6E5BA8;--purple2:rgba(110,91,168,0.13);
+  --white:#161A1F;--gray:#8A93A6;--gray2:#5B6472;--gray3:#2A2E36;
+  --border:rgba(15,23,42,0.08);--border2:rgba(15,23,42,0.15);
   --r:16px;--r2:12px;
   --font:'Inter',system-ui,sans-serif;
   --font-brand:'Playfair Display',serif;
@@ -51,7 +51,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .ch-a{background:none;border:none;color:var(--blue2);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer}
 .pi{padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);cursor:pointer}
 .pi:last-child{border-bottom:none}
-.pi:active{background:rgba(255,255,255,.04)}
+.pi:active{background:rgba(15,23,42,.04)}
 .av{width:42px;height:42px;border-radius:12px;background:var(--blue3);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--blue2);flex-shrink:0}
 .av-r{background:var(--red2)!important;color:var(--red)!important}
 .pi-info{flex:1;min-width:0}
@@ -69,7 +69,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .typetab.on-p{background:var(--purple2);border-color:var(--purple);color:var(--purple)}
 .typetab.on-m{background:var(--amber2);border-color:var(--amber);color:var(--amber)}
 .typetab.on-l{background:var(--blue3);border-color:var(--blue);color:var(--blue2)}
-.pb{background:rgba(255,255,255,.08);border-radius:99px;height:5px}
+.pb{background:rgba(15,23,42,.08);border-radius:99px;height:5px}
 .pf{height:100%;border-radius:99px;background:var(--blue)}
 .pf.done{background:var(--green)}.pf.mid{background:var(--amber)}
 .sw{padding:12px 16px 4px;position:relative}
@@ -108,7 +108,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .fr2{display:grid;grid-template-columns:46px 1fr 1fr 1fr 1fr;border-bottom:1px solid var(--border)}
 .fr2:last-child{border-bottom:none}
 .fc{padding:9px 4px;text-align:center;font-size:12px}
-.fc.hd{background:rgba(0,0,0,.25);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray2);font-weight:700}
+.fc.hd{background:rgba(15,23,42,.05);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray2);font-weight:700}
 .fc.ey{font-weight:800;color:var(--blue2);font-size:11px;background:rgba(59,130,246,.08);display:flex;align-items:center;justify-content:center}
 .fc input{width:100%;background:transparent;border:none;outline:none;color:var(--white);font-size:14px;text-align:center;font-family:var(--font);padding:0}
 .fc input::placeholder{color:var(--gray);font-size:12px}
@@ -124,7 +124,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .sbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray2);font-weight:700}
 .sbv{font-size:15px;font-weight:800;margin-top:4px;word-break:break-word}
 .save-btn{width:100%;padding:16px;background:var(--blue);color:white;border:none;border-radius:var(--r2);font-size:16px;font-weight:800;font-family:var(--font);cursor:pointer;margin-top:8px;letter-spacing:-.2px}
-.save-btn:active{background:#2563eb}
+.save-btn:active{background:#1D4ED8}
 /* Sheet */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;display:flex;align-items:flex-end}
 .sh{background:var(--bg2);border-radius:24px 24px 0 0;width:100%;max-height:92vh;display:flex;flex-direction:column;padding-bottom:var(--safe-b)}
@@ -149,13 +149,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .cb-l{font-size:10px;color:var(--blue2);font-weight:700;text-transform:uppercase;letter-spacing:.07em}
 .cb-v{font-size:20px;font-weight:800}
 .sl2{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--blue2);font-weight:700;margin:14px 0 8px}
-.toast{position:fixed;bottom:calc(80px + var(--safe-b));left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--blue);border-radius:12px;padding:11px 20px;font-size:13.5px;font-weight:600;z-index:200;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:tin .25s ease}
+.toast{position:fixed;bottom:calc(80px + var(--safe-b));left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--blue);border-radius:12px;padding:11px 20px;font-size:13.5px;font-weight:600;z-index:200;white-space:nowrap;box-shadow:0 8px 32px rgba(15,23,42,.18);animation:tin .25s ease}
 @keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .back-btn{background:none;border:none;color:var(--blue2);font-size:15px;font-weight:700;font-family:var(--font);cursor:pointer;padding:0}
 
 /* ── Login screen ── */
-.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 20%,#1B1811 0%,#0F0D09 70%);padding:24px}
-.login-card{background:var(--bg2);border:1px solid var(--border2);border-top:3px solid var(--blue);border-radius:20px;padding:32px 26px 26px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px -20px rgba(0,0,0,.6)}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 20%,#FFFFFF 0%,#E7EDF7 70%);padding:24px}
+.login-card{background:var(--bg2);border:1px solid var(--border2);border-top:3px solid var(--blue);border-radius:20px;padding:32px 26px 26px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px -20px rgba(15,23,42,.20)}
 .login-emoji{font-size:34px;margin-bottom:6px}
 .login-card h2{font-family:var(--font-brand);font-size:20px;font-weight:700;color:var(--white);margin-bottom:4px}
 .login-card p{font-size:12.5px;color:var(--gray2);margin-bottom:22px}
@@ -242,6 +242,11 @@ function sfb(k,v){
   S.form[k]=v;
   updateComputed();
 }
+// Estado único de laboratorio en el formulario (pendiente | lab | entregado)
+function setFormEstadoLab(v){
+  S.form.enviadoLab=(v==='lab');
+  S.form.entregado=(v==='entregado');
+}
 
 function updateComputed(){
   const f=S.form;
@@ -311,7 +316,7 @@ function go(partial){
   // Flush current form input values before navigating away
   if(S.view==='new'||S.view==='edit') flushForm();
   Object.assign(S,partial);
-  render();
+  render(true);
 }
 
 // Read all live input values from DOM into S.form before save / navigate
@@ -407,9 +412,22 @@ async function doToggleField(id,field){
   }
 }
 
+// Estado único de laboratorio: pendiente | lab | entregado (mutuamente excluyentes)
+async function doSetLabStatus(id,status){
+  const p=S.records.find(r=>r.id===id);
+  if(!p)return;
+  const upd={...p,enviadoLab:status==='lab',entregado:status==='entregado'};
+  try{
+    await ventasCol.doc(id).set(upd);
+    S.detail=upd;render();
+  }catch(e){
+    showToast('❌ No se pudo actualizar.');
+  }
+}
+
 function setClientType(v){
   S.clientType=v;S.filter='all';S.search='';
-  render();
+  render(true);
 }
 
 
@@ -604,15 +622,12 @@ function vForm(){
   </select></div>
   <div class="f"><label>N° Orden laboratorio</label><input id="fi-ordenLab" value="${esc(f.ordenLab)}" onchange="sf('ordenLab',this.value)" placeholder="ORD-001"/></div>
 </div>
-<div class="fr">
-  <div class="f" style="flex-direction:row;align-items:center;gap:8px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px">
-    <input id="fi-enviadoLab" type="checkbox" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--blue)" ${f.enviadoLab?'checked':''} onchange="sfb('enviadoLab',this.checked)"/>
-    <label style="font-size:12.5px;color:var(--white);font-weight:600;margin:0">📦 Enviado a lab</label>
-  </div>
-  <div class="f" style="flex-direction:row;align-items:center;gap:8px;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px">
-    <input id="fi-entregado" type="checkbox" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--green)" ${f.entregado?'checked':''} onchange="sfb('entregado',this.checked)"/>
-    <label style="font-size:12.5px;color:var(--white);font-weight:600;margin:0">✅ Entregado</label>
-  </div>
+<div class="f"><label>Estado del pedido</label>
+  <select id="fi-estadoLab" onchange="setFormEstadoLab(this.value)">
+    <option value="pendiente" ${!f.enviadoLab&&!f.entregado?'selected':''}>⏳ Pendiente de enviar</option>
+    <option value="lab" ${f.enviadoLab&&!f.entregado?'selected':''}>📦 En laboratorio</option>
+    <option value="entregado" ${f.entregado?'selected':''}>✅ Entregado al paciente</option>
+  </select>
 </div>
 <div class="f"><label>Tipo de lente</label><input id="fi-tipoLente" value="${esc(f.tipoLente)}" onchange="sf('tipoLente',this.value)" placeholder="Ej: Monofocal, Progresivo…"/></div>
 <div class="fr">
@@ -666,9 +681,10 @@ function vDetail(){
 ${isProsp?`<div style="background:var(--purple2);border:1px solid rgba(124,107,168,.3);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--purple);margin-bottom:12px">🔵 Este paciente cotizó pero aún no confirma la compra. Su valor no se cuenta en las ventas activas.</div>`:''}
 ${p.esCosto?`<div style="background:rgba(138,131,117,.15);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;font-size:12.5px;color:var(--gray3);margin-bottom:12px">💰 Esta venta se hizo a costo (familiar), sin utilidad para el negocio. Se cuenta en el total de ventas pero no en la utilidad.</div>`:''}
 ${p.jornada?`<div class="cb" style="background:var(--purple2);border-color:rgba(124,107,168,.3)"><span style="font-size:16px">🗓️</span><div><div class="cb-l" style="color:var(--purple)">Jornada</div><div class="cb-v" style="font-size:15px">${esc(p.jornada)}</div></div></div>`:''}
-<div style="display:flex;gap:8px;margin-bottom:12px">
-  <button onclick="doToggleField('${p.id}','enviadoLab')" style="flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid ${p.enviadoLab?'var(--blue)':'var(--border2)'};background:${p.enviadoLab?'var(--blue3)':'var(--bg3)'};color:${p.enviadoLab?'var(--blue2)':'var(--gray2)'};font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer">📦 ${p.enviadoLab?'Enviado a lab':'Sin enviar a lab'}</button>
-  <button onclick="doToggleField('${p.id}','entregado')" style="flex:1;padding:11px 8px;border-radius:10px;border:1.5px solid ${p.entregado?'var(--green)':'var(--border2)'};background:${p.entregado?'var(--green2)':'var(--bg3)'};color:${p.entregado?'var(--green)':'var(--gray2)'};font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer">✅ ${p.entregado?'Entregado':'Sin entregar'}</button>
+<div style="display:flex;gap:6px;margin-bottom:12px">
+  <button onclick="doSetLabStatus('${p.id}','pendiente')" style="flex:1;padding:11px 4px;border-radius:10px;border:1.5px solid ${!p.enviadoLab&&!p.entregado?'var(--amber)':'var(--border2)'};background:${!p.enviadoLab&&!p.entregado?'var(--amber2)':'var(--bg3)'};color:${!p.enviadoLab&&!p.entregado?'var(--amber)':'var(--gray2)'};font-size:11.5px;font-weight:700;font-family:var(--font);cursor:pointer">⏳ Pendiente</button>
+  <button onclick="doSetLabStatus('${p.id}','lab')" style="flex:1;padding:11px 4px;border-radius:10px;border:1.5px solid ${p.enviadoLab&&!p.entregado?'var(--blue)':'var(--border2)'};background:${p.enviadoLab&&!p.entregado?'var(--blue3)':'var(--bg3)'};color:${p.enviadoLab&&!p.entregado?'var(--blue2)':'var(--gray2)'};font-size:11.5px;font-weight:700;font-family:var(--font);cursor:pointer">📦 En lab</button>
+  <button onclick="doSetLabStatus('${p.id}','entregado')" style="flex:1;padding:11px 4px;border-radius:10px;border:1.5px solid ${p.entregado?'var(--green)':'var(--border2)'};background:${p.entregado?'var(--green2)':'var(--bg3)'};color:${p.entregado?'var(--green)':'var(--gray2)'};font-size:11.5px;font-weight:700;font-family:var(--font);cursor:pointer">✅ Entregado</button>
 </div>
 <div class="cb">
   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--blue2)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
@@ -717,13 +733,13 @@ function dr(label,value){return`<div class="dr"><span class="dr-l">${label}</spa
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const monthLabel=m=>{const[y,mo]=m.split('-');return MESES[(+mo)-1]+' '+y;};
 
-function setDashTab(t){S.dashTab=t;render();}
-function setDashMonth(v){if(v)S.dashMonth=v;render();}
+function setDashTab(t){S.dashTab=t;render(true);}
+function setDashMonth(v){if(v)S.dashMonth=v;render(true);}
 function shiftMonth(delta){
   const[y,m]=S.dashMonth.split('-').map(Number);
   const d=new Date(y,m-1+delta,1);
   S.dashMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-  render();
+  render(true);
 }
 
 async function doAddGasto(){
@@ -814,7 +830,7 @@ function vDashFin(){
     <div class="fr3"><div class="fc hd"></div><div class="fc hd">Venta</div><div class="fc hd">Costo</div><div class="fc hd">Utilidad</div></div>
     <div class="fr3"><div class="fc ey">👓 Lentes</div><div class="fc">${fmt(vL)}</div><div class="fc" style="color:var(--red)">${fmt(cL)}</div><div class="fc" style="color:${uL>=0?'var(--green)':'var(--red)'};font-weight:800">${fmt(uL)}</div></div>
     <div class="fr3"><div class="fc ey">🕶️ Monturas</div><div class="fc">${fmt(vM)}</div><div class="fc" style="color:var(--red)">${fmt(cM)}</div><div class="fc" style="color:${uM>=0?'var(--green)':'var(--red)'};font-weight:800">${fmt(uM)}</div></div>
-    <div class="fr3" style="background:rgba(255,255,255,.03)"><div class="fc ey" style="color:var(--blue2)">Total</div><div class="fc" style="font-weight:800">${fmt(totVenta)}</div><div class="fc" style="color:var(--red);font-weight:800">${fmt(totCosto)}</div><div class="fc" style="color:${utilBruta>=0?'var(--green)':'var(--red)'};font-weight:800">${fmt(utilBruta)}</div></div>
+    <div class="fr3" style="background:rgba(37,99,235,.05)"><div class="fc ey" style="color:var(--blue2)">Total</div><div class="fc" style="font-weight:800">${fmt(totVenta)}</div><div class="fc" style="color:var(--red);font-weight:800">${fmt(totCosto)}</div><div class="fc" style="color:${utilBruta>=0?'var(--green)':'var(--red)'};font-weight:800">${fmt(utilBruta)}</div></div>
   </div>
   </div>
 </div>
@@ -857,8 +873,9 @@ function vDashJornadas(){
     const costo=grp.reduce((s,r)=>s+tcp(r),0);
     const util=grp.reduce((s,r)=>s+tup(r),0);
     const margen=tot>0?(util/tot)*100:0;
+    const pendientes=grp.filter(r=>!r.enviadoLab&&!r.entregado).length;
+    const enLab=grp.filter(r=>r.enviadoLab&&!r.entregado).length;
     const entregados=grp.filter(r=>r.entregado).length;
-    const enviados=grp.filter(r=>r.enviadoLab).length;
     const isOpen=S.jornadaOpen===name;
     const enc=encodeURIComponent(name);
     return`
@@ -877,14 +894,15 @@ function vDashJornadas(){
     <span>Costo total: <b style="color:var(--white)">${fmt(costo)}</b></span>
     <span>Margen: <b style="color:${util>=0?'var(--purple)':'var(--red)'}">${margen.toFixed(1)}%</b></span>
   </div>
-  <div style="padding:10px 16px;display:flex;gap:16px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray2)">
-    <span>📦 En lab: <b style="color:var(--white)">${enviados}/${grp.length}</b></span>
-    <span>✅ Entregados: <b style="color:var(--white)">${entregados}/${grp.length}</b></span>
+  <div style="padding:10px 16px;display:flex;gap:14px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray2)">
+    <span>⏳ Pendientes: <b style="color:var(--white)">${pendientes}</b></span>
+    <span>📦 En lab: <b style="color:var(--white)">${enLab}</b></span>
+    <span>✅ Entregados: <b style="color:var(--white)">${entregados}</b></span>
   </div>
   ${isOpen?[...grp].sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(r=>`
   <div class="pi" onclick="openDetail('${r.id}')">
     <div class="av${tcli(r)==='prospecto'?' av-p':''}">${r.nombre.charAt(0).toUpperCase()}</div>
-    <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">${tsp(r)>0?fmt(tsp(r))+' pendiente':'Pagado'} · ${r.enviadoLab?'📦 En lab':'📦 Sin enviar'} · ${r.entregado?'✅ Entregado':'⏳ Sin entregar'}</div></div>
+    <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">${tsp(r)>0?fmt(tsp(r))+' pendiente':'Pagado'} · ${r.entregado?'✅ Entregado':r.enviadoLab?'📦 En laboratorio':'⏳ Pendiente de enviar'}</div></div>
     <div class="pi-r"><div class="pi-amt">${fmt(tvp(r))}</div></div>
   </div>`).join(''):''}
 </div>`;
@@ -955,29 +973,28 @@ function vDashLabs(){
   const groups={};
   withLab.forEach(r=>{(groups[r.laboratorio]=groups[r.laboratorio]||[]).push(r);});
   const names=Object.keys(groups).sort((a,b)=>{
-    const pa=groups[a].filter(r=>!r.enviadoLab).length,pb=groups[b].filter(r=>!r.enviadoLab).length;
+    const pa=groups[a].filter(r=>!(parseFloat(r.costoLente)>0)).length,pb=groups[b].filter(r=>!(parseFloat(r.costoLente)>0)).length;
     return pb-pa||a.localeCompare(b);
   });
   if(!names.length) return`<div class="empty"><span>🏢</span><p>Aún no has asignado un laboratorio a ningún paciente.<br>Selecciónalo al crear o editar el paciente.</p></div>`;
   return names.map(name=>{
     const grp=[...groups[name]].sort((a,b)=>b.fecha.localeCompare(a.fecha));
     const costoTot=grp.reduce((s,r)=>s+(parseFloat(r.costoLente)||0),0);
-    const enviados=grp.filter(r=>r.enviadoLab).length;
-    const entregados=grp.filter(r=>r.entregado).length;
+    const faltantes=grp.filter(r=>!(parseFloat(r.costoLente)>0)).length;
     return`
 <div class="card">
   <div class="ch"><span class="ch-t">🏢 ${esc(name)}</span><span class="topbar-badge" style="background:var(--blue3);color:var(--blue2)">${grp.length}</span></div>
-  <div style="padding:10px 16px;display:flex;justify-content:space-between;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray2)">
+  <div style="padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--gray2)">
     <span>Costo lentes: <b style="color:var(--white)">${fmt(costoTot)}</b></span>
-    <span>📦 Enviados: <b style="color:var(--white)">${enviados}/${grp.length}</b></span>
-    <span>✅ Entregados: <b style="color:var(--white)">${entregados}/${grp.length}</b></span>
+    ${faltantes?`<span>⚠️ Falta costo de lente: <b style="color:var(--red)">${faltantes}</b></span>`:''}
   </div>
-  ${grp.map(r=>`
+  ${grp.map(r=>{
+    const faltaLente=!(parseFloat(r.costoLente)>0);
+    return`
   <div class="pi" onclick="openDetail('${r.id}')">
     <div class="av${tcli(r)==='prospecto'?' av-p':''}">${r.nombre.charAt(0).toUpperCase()}</div>
-    <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · Costo lente: ${fmt(r.costoLente)}</div></div>
-    <div class="pi-r"><span class="bdg ${r.enviadoLab?'paid':'pending'}">${r.enviadoLab?'📦 Enviado':'⏳ Sin enviar'}</span></div>
-  </div>`).join('')}
+    <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · Lente: ${faltaLente?'<b style="color:var(--red)">falta</b>':fmt(r.costoLente)} · Montura: ${fmt(r.costoMontura)}</div></div>
+  </div>`;}).join('')}
 </div>`;
   }).join('');
 }
@@ -992,7 +1009,11 @@ function navBar(){
 </div>`;
 }
 
-function render(){
+let _lastRenderView=null;
+function render(forceTop){
+  const scrollEl=document.querySelector('.scroll');
+  const savedScroll=scrollEl?scrollEl.scrollTop:0;
+  const viewChanged=S.view!==_lastRenderView;
   let html='';
   if(S.view==='home')      html=vHome();
   else if(S.view==='list') html=vList();
@@ -1000,6 +1021,9 @@ function render(){
   else                     html=vForm();
   const sheet=S.detail?vDetail():'';
   app.innerHTML=html+sheet;
+  _lastRenderView=S.view;
+  const newScrollEl=document.querySelector('.scroll');
+  if(newScrollEl) newScrollEl.scrollTop=(viewChanged||forceTop)?0:savedScroll;
 }
 
 function doExport(){
@@ -1073,10 +1097,10 @@ function doImport(){
   inp.click();
 }
 
-window.sf=sf;window.sfx=sfx;window.sfn=sfn;window.sfb=sfb;window.go=go;
+window.sf=sf;window.sfx=sfx;window.sfn=sfn;window.sfb=sfb;window.go=go;window.setFormEstadoLab=setFormEstadoLab;
 window.doSave=doSave;window.doDel=doDel;window.doAbono=doAbono;window.delAbono=delAbono;
 window.openDetail=openDetail;window.openNew=openNew;window.openEdit=openEdit;
-window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.doToggleField=doToggleField;window.S=S;
+window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.doToggleField=doToggleField;window.doSetLabStatus=doSetLabStatus;window.S=S;
 window.doExport=doExport;window.doImport=doImport;
 window.setDashTab=setDashTab;window.setDashMonth=setDashMonth;window.shiftMonth=shiftMonth;
 window.doAddGasto=doAddGasto;window.delGasto=delGasto;window.toggleJornada=toggleJornada;
