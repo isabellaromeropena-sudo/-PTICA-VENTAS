@@ -105,13 +105,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .ro-red{background:rgba(239,68,68,.08)!important;border-color:rgba(239,68,68,.3)!important;color:var(--red)!important;font-weight:700!important}
 /* Formula table */
 .ftbl{width:100%;border:1.5px solid var(--border2);border-radius:var(--r2);overflow:hidden;margin-bottom:12px}
-.fr2{display:grid;grid-template-columns:46px 1fr 1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+.fr2{display:grid;grid-template-columns:40px repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border)}
 .fr2:last-child{border-bottom:none}
 .fc{padding:9px 4px;text-align:center;font-size:12px}
 .fc.hd{background:rgba(15,23,42,.05);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray2);font-weight:700}
 .fc.ey{font-weight:800;color:var(--blue2);font-size:11px;background:rgba(59,130,246,.08);display:flex;align-items:center;justify-content:center}
 .fc input{width:100%;background:transparent;border:none;outline:none;color:var(--white);font-size:14px;text-align:center;font-family:var(--font);padding:0}
 .fc input::placeholder{color:var(--gray);font-size:12px}
+.fc input{font-size:13px}
+.fc.hd{font-size:8px;letter-spacing:.02em;padding:9px 1px}
+.f textarea{background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px;color:var(--white);font-size:16px;outline:none;font-family:var(--font);width:100%;min-height:90px;resize:vertical;line-height:1.4}
+.f textarea:focus{border-color:var(--blue)}
+.f textarea::placeholder{color:var(--gray)}
 .fr3{display:grid;grid-template-columns:84px 1fr 1fr 1fr;border-bottom:1px solid var(--border)}
 .fr3:last-child{border-bottom:none}
 .mnav{display:flex;align-items:center;gap:8px;padding:12px 16px 4px}
@@ -190,7 +195,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 const fmt=n=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0);
 const tod=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Math.random().toString(36).slice(2,9);
-const ef=()=>({esfera:'',cilindro:'',eje:'',adicion:''});
+const ef=()=>({esfera:'',cilindro:'',eje:'',adicion:'',dp:'',avl:'',avp:''});
+const FK=['esfera','cilindro','eje','adicion','dp','avl','avp'];
 const esc=v=>String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
 // ── Conexión a Firebase / Firestore: los registros se guardan en la nube y se
@@ -217,7 +223,7 @@ const tsp=p=>tvp(p)-tap(p);
 const estp=p=>{const v=tvp(p),a=tap(p);if(v===0)return'pending';if(a>=v)return'paid';if(a>0)return'partial';return'pending';};
 const elbl=e=>e==='paid'?'Pagado':e==='partial'?'Parcial':'Pendiente';
 const tcli=p=>p&&p.tipoCliente==='prospecto'?'prospecto':'activo';
-const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),jornada:'',cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',enviadoLab:false,entregado:false,tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',abonos:[]});
+const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),jornada:'',cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',enviadoLab:false,entregado:false,tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',observaciones:'',abonos:[]});
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let S={view:'home',records:[],gastos:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod(),dashTab:'fin',dashMonth:new Date().toISOString().slice(0,7),jornadaOpen:null,gDesc:'',gMonto:'',gFecha:tod(),dashSearch:'',dashMFilter:'all'};
@@ -321,11 +327,11 @@ function go(partial){
 
 // Read all live input values from DOM into S.form before save / navigate
 function flushForm(){
-  const ids=['tipoCliente','control','nombre','fecha','jornada','cedula','correo','edad','telefono','direccion','ciudad','laboratorio','ordenLab','tipoLente','valorLente','costoLente','montura','valorMontura','costoMontura','abonoInicial'];
+  const ids=['tipoCliente','control','nombre','fecha','jornada','cedula','correo','edad','telefono','direccion','ciudad','laboratorio','ordenLab','tipoLente','valorLente','costoLente','montura','valorMontura','costoMontura','abonoInicial','observaciones'];
   ids.forEach(k=>{const el=document.getElementById('fi-'+k);if(el)S.form[k]=el.value;});
   // Formula
   ['od','oi'].forEach(eye=>{
-    ['esfera','cilindro','eje','adicion'].forEach(k=>{
+    FK.forEach(k=>{
       const el=document.getElementById('fi-'+eye+'-'+k);
       if(el)S.form[eye][k]=el.value;
     });
@@ -604,9 +610,9 @@ function vForm(){
 
 <div class="sl">Fórmula óptica</div>
 <div class="ftbl">
-  <div class="fr2"><div class="fc hd"></div><div class="fc hd">Esfera</div><div class="fc hd">Cilindro</div><div class="fc hd">Eje</div><div class="fc hd">Adición</div></div>
-  <div class="fr2"><div class="fc ey">OD</div>${['esfera','cilindro','eje','adicion'].map(k=>`<div class="fc"><input id="fi-od-${k}" value="${esc(f.od[k])}" onchange="sfx('od','${k}',this.value)" placeholder="—" inputmode="decimal"/></div>`).join('')}</div>
-  <div class="fr2"><div class="fc ey">OI</div>${['esfera','cilindro','eje','adicion'].map(k=>`<div class="fc"><input id="fi-oi-${k}" value="${esc(f.oi[k])}" onchange="sfx('oi','${k}',this.value)" placeholder="—" inputmode="decimal"/></div>`).join('')}</div>
+  <div class="fr2"><div class="fc hd"></div><div class="fc hd">Esfera</div><div class="fc hd">Cilindro</div><div class="fc hd">Eje</div><div class="fc hd">Adición</div><div class="fc hd">DP</div><div class="fc hd">AVL</div><div class="fc hd">AVP</div></div>
+  <div class="fr2"><div class="fc ey">OD</div>${FK.map(k=>`<div class="fc"><input id="fi-od-${k}" value="${esc(f.od[k])}" onchange="sfx('od','${k}',this.value)" placeholder="—" ${['dp','avl','avp'].includes(k)?'':'inputmode="decimal"'}/></div>`).join('')}</div>
+  <div class="fr2"><div class="fc ey">OI</div>${FK.map(k=>`<div class="fc"><input id="fi-oi-${k}" value="${esc(f.oi[k])}" onchange="sfx('oi','${k}',this.value)" placeholder="—" ${['dp','avl','avp'].includes(k)?'':'inputmode="decimal"'}/></div>`).join('')}</div>
 </div>
 
 <div class="sl">Lente y montura</div>
@@ -660,6 +666,9 @@ function vForm(){
   <div id="pl-form" style="font-size:10.5px;color:var(--gray2);margin-top:4px;text-align:right">${pct.toFixed(0)}% pagado al registrar</div>
 </div>
 
+<div class="sl">Observaciones</div>
+<div class="f"><textarea id="fi-observaciones" onchange="sf('observaciones',this.value)" placeholder="Notas sobre el paciente, la consulta o el pedido…">${esc(f.observaciones)}</textarea></div>
+
 <button class="save-btn" onclick="doSave()">💾 Guardar paciente</button>
 <div style="height:36px"></div>
 </div></div>
@@ -695,11 +704,12 @@ ${p.jornada?`<div class="cb" style="background:var(--purple2);border-color:rgba(
 ${dr('Cédula',p.cedula)}${dr('Correo',p.correo)}${dr('Edad',p.edad?p.edad+' años':null)}${dr('Teléfono',p.telefono)}${dr('Dirección',p.direccion)}
 <div class="sl2">Fórmula óptica</div>
 <div class="ftbl" style="margin-bottom:12px">
-  <div class="fr2"><div class="fc hd"></div><div class="fc hd">Esfera</div><div class="fc hd">Cilindro</div><div class="fc hd">Eje</div><div class="fc hd">Adición</div></div>
-  ${['od','oi'].map(eye=>`<div class="fr2"><div class="fc ey">${eye.toUpperCase()}</div>${['esfera','cilindro','eje','adicion'].map(k=>`<div class="fc" style="font-size:13px;color:${p[eye][k]?'var(--white)':'var(--gray)'}">${p[eye][k]||'—'}</div>`).join('')}</div>`).join('')}
+  <div class="fr2"><div class="fc hd"></div><div class="fc hd">Esfera</div><div class="fc hd">Cilindro</div><div class="fc hd">Eje</div><div class="fc hd">Adición</div><div class="fc hd">DP</div><div class="fc hd">AVL</div><div class="fc hd">AVP</div></div>
+  ${['od','oi'].map(eye=>`<div class="fr2"><div class="fc ey">${eye.toUpperCase()}</div>${FK.map(k=>`<div class="fc" style="font-size:12px;color:${p[eye][k]?'var(--white)':'var(--gray)'}">${p[eye][k]||'—'}</div>`).join('')}</div>`).join('')}
 </div>
 <div class="sl2">Venta</div>
 ${dr('Laboratorio',p.laboratorio)}${dr('N° Orden lab.',p.ordenLab)}${dr('Tipo de lente',p.tipoLente)}${dr('Montura / Ref.',p.montura)}${dr('Valor lente',fmt(p.valorLente))}${dr('Costo lente',fmt(p.costoLente))}${dr('Valor montura',fmt(p.valorMontura))}${dr('Costo montura',fmt(p.costoMontura))}${dr(isProsp?'Valor cotizado':'Total venta','<span style="color:var(--blue2);font-weight:800">'+fmt(v)+'</span>')}${dr('Costo total','<span style="color:var(--red);font-weight:800">'+fmt(c)+'</span>')}${dr(isProsp?'Utilidad proyectada':p.esCosto?'Utilidad (a costo)':'Utilidad','<span style="color:'+(u>0?'var(--green)':u<0?'var(--red)':'var(--amber)')+';font-weight:800">'+fmt(u)+'</span>')}
+${p.observaciones?`<div class="sl2">Observaciones</div><div style="font-size:13px;line-height:1.5;white-space:pre-wrap;color:var(--white);background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px">${esc(p.observaciones)}</div>`:''}
 <div class="sl2">Pagos</div>
 <div class="sb">
   <div class="sbi"><div class="sbl">Total</div><div class="sbv" style="color:var(--blue2)">${fmt(v)}</div></div>
@@ -1034,14 +1044,15 @@ function doExport(){
     'Control':p.control,'Fecha':p.fecha,'Jornada':p.jornada||'','Nombre':p.nombre,'Cédula':p.cedula,
     'Correo':p.correo,'Edad':p.edad,'Teléfono':p.telefono,'Dirección':p.direccion,
     'Ciudad':p.ciudad,
-    'OD Esfera':p.od.esfera,'OD Cilindro':p.od.cilindro,'OD Eje':p.od.eje,'OD Adición':p.od.adicion,
-    'OI Esfera':p.oi.esfera,'OI Cilindro':p.oi.cilindro,'OI Eje':p.oi.eje,'OI Adición':p.oi.adicion,
+    'OD Esfera':p.od.esfera,'OD Cilindro':p.od.cilindro,'OD Eje':p.od.eje,'OD Adición':p.od.adicion,'OD DP':p.od.dp||'','OD AVL':p.od.avl||'','OD AVP':p.od.avp||'',
+    'OI Esfera':p.oi.esfera,'OI Cilindro':p.oi.cilindro,'OI Eje':p.oi.eje,'OI Adición':p.oi.adicion,'OI DP':p.oi.dp||'','OI AVL':p.oi.avl||'','OI AVP':p.oi.avp||'',
     'Laboratorio':p.laboratorio,'N° Orden Lab.':p.ordenLab,'Enviado a Lab':p.enviadoLab?'Sí':'No','Entregado':p.entregado?'Sí':'No',
     'Tipo Lente':p.tipoLente,'Valor Lente':parseFloat(p.valorLente)||0,'Costo Lente':parseFloat(p.costoLente)||0,
     'Montura':p.montura,'Valor Montura':parseFloat(p.valorMontura)||0,'Costo Montura':parseFloat(p.costoMontura)||0,
     'Total Venta':tvp(p),'Costo Total':tcp(p),'Utilidad':tup(p),
     'Total Abonado':tap(p),'Saldo Pendiente':Math.max(0,tsp(p)),
     'Estado':elbl(estp(p)),
+    'Observaciones':p.observaciones||'',
     'Abonos':p.abonos.map(a=>a.fecha+': $'+a.monto).join(' | '),
   }));
   if(!rows.length){showToast('⚠️ No hay registros para exportar');return;}
@@ -1070,14 +1081,14 @@ function doImport(){
           control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||tod(),jornada:r['Jornada']||'',
           cedula:String(r['Cédula']||''),correo:r['Correo']||'',edad:String(r['Edad']||''),telefono:String(r['Teléfono']||''),
           direccion:r['Dirección']||'',ciudad:r['Ciudad']||'',
-          od:{esfera:String(r['OD Esfera']||''),cilindro:String(r['OD Cilindro']||''),eje:String(r['OD Eje']||''),adicion:String(r['OD Adición']||'')},
-          oi:{esfera:String(r['OI Esfera']||''),cilindro:String(r['OI Cilindro']||''),eje:String(r['OI Eje']||''),adicion:String(r['OI Adición']||'')},
+          od:{esfera:String(r['OD Esfera']||''),cilindro:String(r['OD Cilindro']||''),eje:String(r['OD Eje']||''),adicion:String(r['OD Adición']||''),dp:String(r['OD DP']||''),avl:String(r['OD AVL']||''),avp:String(r['OD AVP']||'')},
+          oi:{esfera:String(r['OI Esfera']||''),cilindro:String(r['OI Cilindro']||''),eje:String(r['OI Eje']||''),adicion:String(r['OI Adición']||''),dp:String(r['OI DP']||''),avl:String(r['OI AVL']||''),avp:String(r['OI AVP']||'')},
           laboratorio:r['Laboratorio']||'',ordenLab:String(r['N° Orden Lab.']||''),
           enviadoLab:String(r['Enviado a Lab']||'').toLowerCase().startsWith('s'),
           entregado:String(r['Entregado']||'').toLowerCase().startsWith('s'),
           tipoLente:r['Tipo Lente']||'',valorLente:r['Valor Lente']||'',costoLente:r['Costo Lente']||'',
           montura:r['Montura']||'',valorMontura:r['Valor Montura']||'',costoMontura:r['Costo Montura']||'',
-          abonoInicial:'',
+          abonoInicial:'',observaciones:String(r['Observaciones']||''),
           abonos:r['Abonos']?String(r['Abonos']).split('|').filter(Boolean).map(s=>{
             const[fecha,resto]=(s.trim()).split(':');
             return{id:uid(),fecha:(fecha||'').trim(),monto:parseFloat((resto||'').replace(/[^0-9.]/g,''))||0};
