@@ -114,6 +114,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .fc input::placeholder{color:var(--gray);font-size:12px}
 .fc input{font-size:13px}
 .fc.hd{font-size:8px;letter-spacing:.02em;padding:9px 1px}
+.gwrap{overflow-x:auto;padding:0 8px 4px}
+.gtbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:430px}
+.gtbl th{background:rgba(15,23,42,.05);font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray2);font-weight:700;padding:9px 8px;text-align:left;white-space:nowrap}
+.gtbl td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.gtbl .r{text-align:right}
+.gtbl .num{font-weight:800;color:var(--red);white-space:nowrap}
+.gtbl tfoot td{font-weight:800;border-bottom:none;background:rgba(37,99,235,.05)}
+.gtbl tr.editing td{background:rgba(245,158,11,.12)}
+.gchip{display:inline-block;padding:3px 9px;border-radius:99px;font-size:10.5px;font-weight:700;color:#fff;white-space:nowrap}
+.gbtn{background:none;border:none;font-size:15px;cursor:pointer;padding:4px 6px;color:var(--gray2)}
+.gbtn:hover{color:var(--blue2)}
+.gsel{background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px;color:var(--white);font-size:16px;outline:none;font-family:var(--font);width:100%}
+.dn-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 16px}
+.dn-leg{width:100%;display:flex;flex-direction:column;gap:9px}
+.dn-row{display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;font-size:12.5px}
+.dn-dot{width:12px;height:12px;border-radius:4px}
+.dn-sub{font-size:10.5px;color:var(--gray2);text-align:right}
+.hb{height:12px;border-radius:99px;background:var(--border);overflow:hidden}
+.hb>div{height:100%;border-radius:99px}
 .f textarea{background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r2);padding:13px 14px;color:var(--white);font-size:16px;outline:none;font-family:var(--font);width:100%;min-height:90px;resize:vertical;line-height:1.4}
 .f textarea:focus{border-color:var(--blue)}
 .f textarea::placeholder{color:var(--gray)}
@@ -196,6 +215,8 @@ const fmt=n=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maxi
 const tod=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const ef=()=>({esfera:'',cilindro:'',eje:'',adicion:'',dp:'',avl:'',avp:''});
+const GCATS=[{k:'Optómetra',c:'#2563eb'},{k:'Auxiliar',c:'#7c3aed'},{k:'Arriendo',c:'#f59e0b'},{k:'Servicios',c:'#06b6d4'},{k:'Transporte',c:'#22c55e'},{k:'Varios',c:'#94a3b8'}];
+const GCOL=Object.fromEntries(GCATS.map(c=>[c.k,c.c]));GCOL['Sin categoría']='#cbd5e1';GCOL['Laboratorio (lentes)']='#ef4444';GCOL['Monturas']='#ec4899';
 const FK=['esfera','cilindro','eje','adicion','dp','avl','avp'];
 const esc=v=>String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
@@ -756,20 +777,30 @@ async function doAddGasto(){
   const desc=(S.gDesc||'').trim();
   const monto=parseFloat(S.gMonto)||0;
   const fecha=S.gFecha||tod();
+  const categoria=S.gCat||'Varios';
   if(!desc||monto<=0){showToast('⚠️ Completa descripción y valor');return;}
-  const g={id:uid(),descripcion:desc,monto,fecha};
+  const editing=S.gEditId&&S.gastos.find(x=>x.id===S.gEditId);
+  const g=editing?{...editing,descripcion:desc,monto,fecha,categoria}:{id:uid(),descripcion:desc,monto,fecha,categoria};
   try{
     await gastosCol.doc(g.id).set(g);
-    S.gDesc='';S.gMonto='';
-    showToast('✅ Gasto agregado');render();
+    S.gDesc='';S.gMonto='';S.gEditId=null;
+    showToast(editing?'✅ Gasto actualizado':'✅ Gasto agregado');render();
   }catch(e){
-    showToast('❌ No se pudo agregar el gasto');
+    showToast('❌ No se pudo guardar el gasto');
   }
 }
+function startEditGasto(id){
+  const g=S.gastos.find(x=>x.id===id);if(!g)return;
+  S.gEditId=id;S.gDesc=g.descripcion||'';S.gMonto=String(g.monto??'');S.gFecha=g.fecha||tod();S.gCat=g.categoria||'Varios';
+  render();
+  setTimeout(()=>{const el=document.getElementById('gx-form');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},60);
+}
+function cancelEditGasto(){S.gEditId=null;S.gDesc='';S.gMonto='';render();}
 async function delGasto(id){
   if(!confirm('¿Eliminar este gasto?'))return;
   try{
     await gastosCol.doc(id).delete();
+    if(S.gEditId===id){S.gEditId=null;S.gDesc='';S.gMonto='';}
     showToast('🗑️ Gasto eliminado');render();
   }catch(e){
     showToast('❌ No se pudo eliminar');
@@ -844,23 +875,71 @@ function vDashFin(){
   </div>
   </div>
 </div>
+${vGastosReport(totVenta,cL,cM,gastosMes)}
 <div class="card">
   <div class="ch"><span class="ch-t">📝 Gastos del mes</span><span style="font-size:13px;font-weight:800;color:var(--red)">${fmt(totGastos)}</span></div>
-  ${gastosMes.length?gastosMes.map(g=>`
-  <div class="pi" style="cursor:default">
-    <div class="pi-info"><div class="pi-n">${esc(g.descripcion)}</div><div class="pi-s">${g.fecha}</div></div>
-    <div class="pi-r" style="display:flex;align-items:center;gap:10px">
-      <div class="pi-amt" style="color:var(--red)">${fmt(g.monto)}</div>
-      <button onclick="delGasto('${g.id}')" style="background:none;border:none;color:var(--gray);font-size:17px;cursor:pointer;padding:2px 4px">✕</button>
-    </div>
-  </div>`).join(''):`<div style="padding:20px 16px;text-align:center;color:var(--gray);font-size:12.5px">Sin gastos registrados este mes.</div>`}
-  <div style="padding:14px 16px;border-top:1px solid var(--border)">
+  ${gastosMes.length?`<div class="gwrap"><table class="gtbl">
+    <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th class="r">Valor</th><th></th></tr></thead>
+    <tbody>${gastosMes.map(g=>{const cat=g.categoria||'Sin categoría';return`
+      <tr class="${S.gEditId===g.id?'editing':''}">
+        <td style="white-space:nowrap;color:var(--gray2)">${(g.fecha||'').slice(5).split('-').reverse().join('/')}</td>
+        <td>${esc(g.descripcion)}</td>
+        <td><span class="gchip" style="background:${GCOL[cat]||'#94a3b8'}">${esc(cat)}</span></td>
+        <td class="r num">${fmt(g.monto)}</td>
+        <td style="white-space:nowrap;text-align:right"><button class="gbtn" title="Editar" onclick="startEditGasto('${g.id}')">✏️</button><button class="gbtn" title="Eliminar" onclick="delGasto('${g.id}')">✕</button></td>
+      </tr>`;}).join('')}</tbody>
+    <tfoot><tr><td colspan="3">Total</td><td class="r num">${fmt(totGastos)}</td><td></td></tr></tfoot>
+  </table></div>`:`<div style="padding:20px 16px;text-align:center;color:var(--gray);font-size:12.5px">Sin gastos registrados este mes.</div>`}
+  <div id="gx-form" style="padding:14px 16px;border-top:1px solid var(--border)">
+    <div style="font-size:12px;font-weight:700;color:${S.gEditId?'var(--amber)':'var(--blue2)'};margin-bottom:10px">${S.gEditId?'✏️ Editando gasto':'➕ Nuevo gasto'}</div>
     <div class="fr">
       <div class="f"><label>Descripción</label><input id="gx-desc" placeholder="Arriendo, servicios…" value="${esc(S.gDesc)}" oninput="S.gDesc=this.value"/></div>
       <div class="f"><label>Valor ($)</label><input id="gx-monto" type="number" inputmode="numeric" placeholder="0" value="${esc(S.gMonto)}" oninput="S.gMonto=this.value"/></div>
     </div>
-    <div class="f"><label>Fecha</label><input id="gx-fecha" type="date" value="${S.gFecha}" onchange="S.gFecha=this.value"/></div>
-    <button class="save-btn" style="font-size:14px;padding:12px" onclick="doAddGasto()">+ Agregar gasto</button>
+    <div class="fr">
+      <div class="f"><label>Categoría</label><select id="gx-cat" class="gsel" onchange="S.gCat=this.value">${GCATS.map(c=>`<option value="${c.k}"${(S.gCat||'Varios')===c.k?' selected':''}>${c.k}</option>`).join('')}</select></div>
+      <div class="f"><label>Fecha</label><input id="gx-fecha" type="date" value="${S.gFecha}" onchange="S.gFecha=this.value"/></div>
+    </div>
+    <button class="save-btn" style="font-size:14px;padding:12px" onclick="doAddGasto()">${S.gEditId?'💾 Guardar cambios':'+ Agregar gasto'}</button>
+    ${S.gEditId?`<button onclick="cancelEditGasto()" style="width:100%;margin-top:8px;background:none;border:1.5px solid var(--border2);border-radius:var(--r2);color:var(--gray2);font-size:14px;font-weight:700;padding:11px;font-family:var(--font);cursor:pointer">Cancelar edición</button>`:''}
+  </div>
+</div>`;
+}
+
+function vGastosReport(ingresos,cL,cM,gastosMes){
+  const porCat={};
+  gastosMes.forEach(g=>{const k=g.categoria||'Sin categoría';porCat[k]=(porCat[k]||0)+(parseFloat(g.monto)||0);});
+  const items=[];
+  GCATS.forEach(c=>{if(porCat[c.k])items.push({k:c.k,v:porCat[c.k]});});
+  if(porCat['Sin categoría'])items.push({k:'Sin categoría',v:porCat['Sin categoría']});
+  if(cL>0)items.push({k:'Laboratorio (lentes)',v:cL});
+  if(cM>0)items.push({k:'Monturas',v:cM});
+  const tot=items.reduce((s,i)=>s+i.v,0);
+  if(!tot)return`<div class="card"><div class="ch"><span class="ch-t">📊 Reporte de egresos</span></div><div style="padding:20px 16px;text-align:center;color:var(--gray);font-size:12.5px">Aún no hay egresos este mes.</div></div>`;
+  items.sort((a,b)=>b.v-a.v);
+  let acc=0;
+  const segs=items.map(i=>{const pct=i.v/tot*100;const seg=`<circle cx="21" cy="21" r="15.9155" fill="none" stroke="${GCOL[i.k]||'#94a3b8'}" stroke-width="7" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="${25-acc}"/>`;acc+=pct;return seg;}).join('');
+  const maxB=Math.max(ingresos,tot,1);
+  const pctIng=ingresos>0?(tot/ingresos*100):0;
+  return`<div class="card">
+  <div class="ch"><span class="ch-t">📊 Reporte de egresos</span><span style="font-size:13px;font-weight:800;color:var(--red)">${fmt(tot)}</span></div>
+  <div class="dn-wrap">
+    <div style="position:relative;width:200px;height:200px">
+      <svg viewBox="0 0 42 42" width="200" height="200"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--border)" stroke-width="7"/>${segs}</svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+        <div style="font-size:10px;color:var(--gray2);text-transform:uppercase;letter-spacing:.06em;font-weight:700">Egresos</div>
+        <div style="font-size:17px;font-weight:800">${fmt(tot)}</div>
+        ${ingresos>0?`<div style="font-size:10.5px;color:var(--gray2)">${pctIng.toFixed(0)}% de ingresos</div>`:''}
+      </div>
+    </div>
+    <div class="dn-leg">${items.map(i=>`<div class="dn-row"><div class="dn-dot" style="background:${GCOL[i.k]||'#94a3b8'}"></div><div style="font-weight:600">${i.k}</div><div style="text-align:right"><div style="font-weight:800">${fmt(i.v)}</div><div class="dn-sub">${(i.v/tot*100).toFixed(0)}% egresos${ingresos>0?' · '+(i.v/ingresos*100).toFixed(0)+'% ingresos':''}</div></div></div>`).join('')}</div>
+  </div>
+  <div style="padding:4px 16px 16px;border-top:1px solid var(--border)">
+    <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--blue2);font-weight:700;margin:12px 0 10px">Ingresos vs egresos</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">Ingresos (ventas)</span><span style="font-weight:800;color:var(--blue2)">${fmt(ingresos)}</span></div>
+    <div class="hb" style="margin-bottom:12px"><div style="width:${ingresos/maxB*100}%;background:var(--blue)"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">Egresos (gastos + lab + monturas)</span><span style="font-weight:800;color:var(--red)">${fmt(tot)}</span></div>
+    <div class="hb"><div style="width:${tot/maxB*100}%;background:var(--red)"></div></div>
   </div>
 </div>`;
 }
@@ -1114,7 +1193,7 @@ window.openDetail=openDetail;window.openNew=openNew;window.openEdit=openEdit;
 window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.doToggleField=doToggleField;window.doSetLabStatus=doSetLabStatus;window.S=S;
 window.doExport=doExport;window.doImport=doImport;
 window.setDashTab=setDashTab;window.setDashMonth=setDashMonth;window.shiftMonth=shiftMonth;
-window.doAddGasto=doAddGasto;window.delGasto=delGasto;window.toggleJornada=toggleJornada;
+window.doAddGasto=doAddGasto;window.startEditGasto=startEditGasto;window.cancelEditGasto=cancelEditGasto;window.delGasto=delGasto;window.toggleJornada=toggleJornada;
 window.filterMonturas=filterMonturas;window.setDashMFilter=setDashMFilter;
 window.doLogout=()=>auth.signOut();
 
