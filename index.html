@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="theme-color" content="#F3F5F8"/>
-<title>HR Visión Empresarial · Óptica</title>
+<title>HR Visión · Ventas Externas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
@@ -194,7 +194,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div class="login-card">
     <div class="login-emoji">👁️</div>
     <h2>HR Visión Empresarial</h2>
-    <p>Óptica · Ingresa para ver tus ventas</p>
+    <p>Ventas externas · Ingresa para ver tus ventas</p>
     <form id="loginForm">
       <div class="f"><label>Correo electrónico</label><input type="email" id="loginEmail" required autocomplete="username"></div>
       <div class="f"><label>Contraseña</label><input type="password" id="loginPassword" required autocomplete="current-password"></div>
@@ -215,7 +215,7 @@ const fmt=n=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maxi
 const tod=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const ef=()=>({esfera:'',cilindro:'',eje:'',adicion:'',dp:'',avl:'',avp:''});
-const GCATS=[{k:'Optómetra',c:'#2563eb'},{k:'Auxiliar',c:'#7c3aed'},{k:'Arriendo',c:'#f59e0b'},{k:'Servicios',c:'#06b6d4'},{k:'Transporte',c:'#22c55e'},{k:'Varios',c:'#94a3b8'}];
+const GCATS=[{k:'Optómetra',c:'#2563eb'},{k:'Auxiliar',c:'#7c3aed'},{k:'Arriendo',c:'#f59e0b'},{k:'Servicios',c:'#06b6d4'},{k:'Transporte',c:'#22c55e'},{k:'Viáticos',c:'#14b8a6'},{k:'Publicidad',c:'#f97316'},{k:'Varios',c:'#94a3b8'}];
 const GCOL=Object.fromEntries(GCATS.map(c=>[c.k,c.c]));GCOL['Sin categoría']='#cbd5e1';GCOL['Laboratorio (lentes)']='#ef4444';GCOL['Monturas']='#ec4899';
 const FK=['esfera','cilindro','eje','adicion','dp','avl','avp'];
 const esc=v=>String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -223,12 +223,12 @@ const esc=v=>String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(
 // ── Conexión a Firebase / Firestore: los registros se guardan en la nube y se
 // sincronizan solos entre todos los computadores que abran esta página.
 const firebaseConfig = {
-  apiKey: "AIzaSyBq-YQLDZ0LiA6l2ZmEu7KMMrjBT1-lyUw",
-  authDomain: "ventas-optica-2a6bd.firebaseapp.com",
-  projectId: "ventas-optica-2a6bd",
-  storageBucket: "ventas-optica-2a6bd.firebasestorage.app",
-  messagingSenderId: "215807997184",
-  appId: "1:215807997184:web:ea9432154aa4a1fd016fe5"
+  apiKey: "AIzaSyBmXpXJqcbfVtBYnpZfGBWCM0rxfnQYlvE",
+  authDomain: "ventas-externas-e7a7e.firebaseapp.com",
+  projectId: "ventas-externas-e7a7e",
+  storageBucket: "ventas-externas-e7a7e.firebasestorage.app",
+  messagingSenderId: "578253827026",
+  appId: "1:578253827026:web:ab822611b519eef6c4f60b"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -480,8 +480,9 @@ function vHome(){
   const pen5=activos.filter(r=>tsp(r)>0).sort((a,b)=>tsp(b)-tsp(a)).slice(0,4);
   return`
 <div class="screen">
-<div class="topbar"><div><div class="topbar-title">👁️ HR Visión Empresarial</div><div class="topbar-sub">Óptica</div></div><div style="display:flex;align-items:center;gap:8px"><div class="topbar-badge">${activos.length} activos</div><button onclick="doLogout()" style="background:none;border:1px solid var(--border2);color:var(--gray2);font-size:11px;font-weight:700;font-family:var(--font);padding:6px 10px;border-radius:8px;cursor:pointer">Salir</button></div></div>
+<div class="topbar"><div><div class="topbar-title">👁️ HR Visión Empresarial</div><div class="topbar-sub">Ventas externas</div></div><div style="display:flex;align-items:center;gap:8px"><div class="topbar-badge">${activos.length} activos</div><button onclick="doLogout()" style="background:none;border:1px solid var(--border2);color:var(--gray2);font-size:11px;font-weight:700;font-family:var(--font);padding:6px 10px;border-radius:8px;cursor:pointer">Salir</button></div></div>
 <div class="scroll">
+${pendMig()?`<div class="card" style="border-top:2.5px solid var(--amber)"><div style="padding:14px 16px"><div class="ch-t">📥 Datos del sistema anterior</div><div style="font-size:12.5px;color:var(--gray2);margin:6px 0 12px">Se encontraron ${pendMig()} registros guardados en este navegador. Pásalos al sistema nuevo una sola vez.</div><button class="save-btn" style="margin:0;padding:12px;font-size:14px" onclick="doMigrate()">Importar ${pendMig()} registros</button></div></div>`:''}
 <div class="stat-grid">
   <div class="stat-pill sp-b"><div class="sp-l">Total ventas</div><div class="sp-v" style="color:var(--blue2)">${fmt(tot)}</div><div class="sp-s">${costoSalesTot>0?fmt(costoSalesTot)+' a costo incl.':'facturado'}</div></div>
   <div class="stat-pill sp-g"><div class="sp-l">Cobrado</div><div class="sp-v" style="color:var(--green)">${fmt(cob)}</div><div class="sp-s">recibido</div></div>
@@ -1115,6 +1116,15 @@ function render(forceTop){
   if(newScrollEl) newScrollEl.scrollTop=(viewChanged||forceTop)?0:savedScroll;
 }
 
+function legacy(){try{return JSON.parse(localStorage.getItem('hr_vision_patients')||'[]')}catch(e){return[]}}
+function pendMig(){try{return localStorage.getItem('hr_migrated')?0:legacy().length}catch(e){return 0}}
+async function doMigrate(){
+  const recs=legacy().map(p=>({...emptyRec(),id:uid(),nombre:p.nombre||'',cedula:p.cedula||'',telefono:p.telefono||'',ciudad:p.ciudad||'',fecha:p.fechaVenta||tod(),od:{...ef(),...p.od},oi:{...ef(),...p.oi},tipoLente:p.montura||'',montura:p.referencia||'',valorLente:p.precioLentes||'',valorMontura:p.precioMontura||'',costoLente:p.costoLab||'',costoMontura:p.costoMontura||'',abonos:p.abonos||[]}));
+  try{
+    for(let i=0;i<recs.length;i+=400){const b=db.batch();recs.slice(i,i+400).forEach(r=>b.set(ventasCol.doc(r.id),r));await b.commit();}
+    localStorage.setItem('hr_migrated','1');showToast('✅ '+recs.length+' registros importados');render();
+  }catch(e){showToast('❌ No se pudo importar. Revisa la conexión.');}
+}
 function doExport(){
   if(!window.XLSX){showToast('⚠️ Cargando librería, intenta en 2 segundos');return;}
   const rows=S.records.map(p=>({
@@ -1138,8 +1148,8 @@ function doExport(){
   const ws=XLSX.utils.json_to_sheet(rows);
   ws['!cols']=Object.keys(rows[0]).map(()=>({wch:18}));
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Óptica');
-  XLSX.writeFile(wb,'HR_Vision_Optica_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  XLSX.utils.book_append_sheet(wb,ws,'Ventas externas');
+  XLSX.writeFile(wb,'HR_Vision_Externas_'+new Date().toISOString().slice(0,10)+'.xlsx');
   showToast('✅ Excel descargado');
 }
 
@@ -1157,7 +1167,7 @@ function doImport(){
         const imp=rows.map(r=>({
           id:uid(),tipoCliente:String(r['Tipo']||'').toLowerCase().includes('prospecto')?'prospecto':'activo',
           esCosto:String(r['A Costo']||'').toLowerCase().startsWith('s'),
-          control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||tod(),jornada:r['Jornada']||'',
+          control:String(r['Control']||''),nombre:r['Nombre']||'',fecha:r['Fecha']||r['Fecha Venta']||tod(),jornada:r['Jornada']||'',
           cedula:String(r['Cédula']||''),correo:r['Correo']||'',edad:String(r['Edad']||''),telefono:String(r['Teléfono']||''),
           direccion:r['Dirección']||'',ciudad:r['Ciudad']||'',
           od:{esfera:String(r['OD Esfera']||''),cilindro:String(r['OD Cilindro']||''),eje:String(r['OD Eje']||''),adicion:String(r['OD Adición']||''),dp:String(r['OD DP']||''),avl:String(r['OD AVL']||''),avp:String(r['OD AVP']||'')},
@@ -1165,10 +1175,10 @@ function doImport(){
           laboratorio:r['Laboratorio']||'',ordenLab:String(r['N° Orden Lab.']||''),
           enviadoLab:String(r['Enviado a Lab']||'').toLowerCase().startsWith('s'),
           entregado:String(r['Entregado']||'').toLowerCase().startsWith('s'),
-          tipoLente:r['Tipo Lente']||'',valorLente:r['Valor Lente']||'',costoLente:r['Costo Lente']||'',
-          montura:r['Montura']||'',valorMontura:r['Valor Montura']||'',costoMontura:r['Costo Montura']||'',
+          valorLente:r['Valor Lente']||r['Precio Lentes']||'',costoLente:r['Costo Lente']||r['Costo Laboratorio']||'',
+          tipoLente:r['Tipo Lente']||(r['Referencia Montura']!==undefined?r['Montura']:'')||'',montura:r['Referencia Montura']!==undefined?(r['Referencia Montura']||''):(r['Montura']||''),valorMontura:r['Valor Montura']||r['Precio Montura']||'',costoMontura:r['Costo Montura']||'',
           abonoInicial:'',observaciones:String(r['Observaciones']||''),
-          abonos:r['Abonos']?String(r['Abonos']).split('|').filter(Boolean).map(s=>{
+          abonos:(r['Abonos']||r['Abonos (detalle)'])?String(r['Abonos']||r['Abonos (detalle)']).split('|').filter(Boolean).map(s=>{
             const[fecha,resto]=(s.trim()).split(':');
             return{id:uid(),fecha:(fecha||'').trim(),monto:parseFloat((resto||'').replace(/[^0-9.]/g,''))||0};
           }):[],
@@ -1191,7 +1201,7 @@ window.sf=sf;window.sfx=sfx;window.sfn=sfn;window.sfb=sfb;window.go=go;window.se
 window.doSave=doSave;window.doDel=doDel;window.doAbono=doAbono;window.delAbono=delAbono;
 window.openDetail=openDetail;window.openNew=openNew;window.openEdit=openEdit;
 window.filterList=filterList;window.setFilter=setFilter;window.setClientType=setClientType;window.doConvert=doConvert;window.doToggleField=doToggleField;window.doSetLabStatus=doSetLabStatus;window.S=S;
-window.doExport=doExport;window.doImport=doImport;
+window.doMigrate=doMigrate;window.doExport=doExport;window.doImport=doImport;
 window.setDashTab=setDashTab;window.setDashMonth=setDashMonth;window.shiftMonth=shiftMonth;
 window.doAddGasto=doAddGasto;window.startEditGasto=startEditGasto;window.cancelEditGasto=cancelEditGasto;window.delGasto=delGasto;window.toggleJornada=toggleJornada;
 window.filterMonturas=filterMonturas;window.setDashMFilter=setDashMFilter;
