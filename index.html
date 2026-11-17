@@ -250,13 +250,15 @@ const tcli=p=>p&&p.tipoCliente==='prospecto'?'prospecto':'activo';
 const labst=p=>p.entregado?'entregado':p.porEntregar?'porentregar':p.enviadoLab?'lab':'pendiente';
 const LABTXT={pendiente:'⏳ Pendiente de enviar',lab:'📦 En laboratorio',porentregar:'🏪 Pendiente por entregar',entregado:'✅ Entregado'};
 const fechaCorta=f=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(f||''));return m?m[3]+'/'+m[2]+'/'+m[1]:String(f||'');};
+const tmont=p=>p&&p.tipoMontura==='propia'?'propia':p&&p.tipoMontura==='contacto'?'contacto':'normal';
+const MONTTXT={normal:'🕶️ Montura de la óptica',propia:'👤 Montura propia',contacto:'👁️ Lentes de contacto'};
 const hasObs=p=>!!(p.observaciones&&String(p.observaciones).trim());
 // Costos faltantes: se considera "falta" si el campo está vacío (un 0 escrito cuenta como ya puesto)
 const vacio=v=>v===''||v==null||isNaN(parseFloat(v));
 const needsLente=p=>(parseFloat(p.valorLente)>0)||!!(p.tipoLente&&String(p.tipoLente).trim())||!!(p.laboratorio&&String(p.laboratorio).trim());
-const needsMont=p=>(parseFloat(p.valorMontura)>0)||!!(p.montura&&String(p.montura).trim());
+const needsMont=p=>tmont(p)==='normal'&&((parseFloat(p.valorMontura)>0)||!!(p.montura&&String(p.montura).trim()));
 const faltaCosto=p=>{const l=needsLente(p)&&vacio(p.costoLente),m=needsMont(p)&&vacio(p.costoMontura);return l&&m?'ambos':l?'lente':m?'montura':null;};
-const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),jornada:'',cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',enviadoLab:false,porEntregar:false,entregado:false,tipoLente:'',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',observaciones:'',abonos:[]});
+const emptyRec=()=>({id:uid(),tipoCliente:'activo',esCosto:false,control:'',nombre:'',fecha:tod(),jornada:'',cedula:'',correo:'',edad:'',telefono:'',direccion:'',ciudad:'',od:ef(),oi:ef(),laboratorio:'',ordenLab:'',enviadoLab:false,porEntregar:false,entregado:false,tipoLente:'',tipoMontura:'normal',valorLente:'',costoLente:'',montura:'',valorMontura:'',costoMontura:'',abonoInicial:'',observaciones:'',abonos:[]});
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let S={view:'home',records:[],gastos:[],search:'',filter:'all',clientType:'activo',form:emptyRec(),detail:null,toast:null,abAmt:'',abFecha:tod(),dashTab:'fin',dashMonth:new Date().toISOString().slice(0,7),jornadaOpen:null,gDesc:'',gMonto:'',gFecha:tod(),dashSearch:'',dashMFilter:'all',jornSearch:'',jornDate:'',obsSearch:'',costFilter:'all'};
@@ -286,6 +288,18 @@ function setFormEstadoLab(v){
   S.form.enviadoLab=(v==='lab');
   S.form.porEntregar=(v==='porentregar');
   S.form.entregado=(v==='entregado');
+}
+
+// Tipo de montura: normal (se vende) | propia (del paciente) | contacto (lentes de contacto)
+function setTipoMontura(v){
+  flushForm();
+  const f=S.form;
+  if(v!=='normal'&&(String(f.montura||'').trim()||String(f.valorMontura||'').trim()||String(f.costoMontura||'').trim())){
+    if(!confirm('Se borrarán la referencia, el valor y el costo de la montura. ¿Continuar?')){render();return;}
+  }
+  f.tipoMontura=v;
+  if(v!=='normal'){f.montura='';f.valorMontura='';f.costoMontura='';}
+  render();
 }
 
 function updateComputed(){
@@ -375,6 +389,7 @@ function flushForm(){
 async function doSave(){
   flushForm();
   if(!S.form.nombre.trim()){showToast('⚠️ El nombre es requerido');return;}
+  if(tmont(S.form)!=='normal'){S.form.montura='';S.form.valorMontura='';S.form.costoMontura='';}
   const ai=parseFloat(S.form.abonoInicial)||0;
   let rec={...S.form};
   delete rec.abonoInicial;
@@ -675,11 +690,19 @@ function vForm(){
   <div class="f"><label>Valor lente ($)</label><input id="fi-valorLente" type="number" inputmode="numeric" value="${esc(f.valorLente)}" oninput="sfn('valorLente',this.value)" placeholder="0"/></div>
   <div class="f"><label>Costo lente ($)</label><input id="fi-costoLente" type="number" inputmode="numeric" value="${esc(f.costoLente)}" oninput="sfn('costoLente',this.value)" placeholder="0"/></div>
 </div>
-<div class="f"><label>Montura (marca / referencia)</label><input id="fi-montura" value="${esc(f.montura)}" onchange="sf('montura',this.value)" placeholder="Ray-Ban RB3025…"/></div>
+<div class="f"><label>Montura</label>
+  <select id="fi-tipoMontura" onchange="setTipoMontura(this.value)">
+    <option value="normal" ${tmont(f)==='normal'?'selected':''}>🕶️ Montura de la óptica (se vende)</option>
+    <option value="propia" ${tmont(f)==='propia'?'selected':''}>👤 Montura propia del paciente</option>
+    <option value="contacto" ${tmont(f)==='contacto'?'selected':''}>👁️ Lentes de contacto (sin montura)</option>
+  </select>
+</div>
+${tmont(f)==='normal'?`<div class="f"><label>Montura (marca / referencia)</label><input id="fi-montura" value="${esc(f.montura)}" onchange="sf('montura',this.value)" placeholder="Ray-Ban RB3025…"/></div>
 <div class="fr">
   <div class="f"><label>Valor montura ($)</label><input id="fi-valorMontura" type="number" inputmode="numeric" value="${esc(f.valorMontura)}" oninput="sfn('valorMontura',this.value)" placeholder="0"/></div>
   <div class="f"><label>Costo montura ($)</label><input id="fi-costoMontura" type="number" inputmode="numeric" value="${esc(f.costoMontura)}" oninput="sfn('costoMontura',this.value)" placeholder="0"/></div>
 </div>
+`:`<div style="font-size:12px;color:var(--gray2);background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;margin-bottom:12px">${tmont(f)==='propia'?'👤 Montura del paciente: no se registra referencia, valor ni costo de montura.':'👁️ Lentes de contacto: solo se registran el valor y el costo del lente.'}</div>`}
 <div class="fr">
   <div class="f"><label>${f.tipoCliente==='prospecto'?'Valor cotizado':'Total venta'}</label><input id="c-total" readonly class="ro-blue" value="${fmt(tot)}"/></div>
   <div class="f"><label>Utilidad ${f.tipoCliente==='prospecto'?'proyectada':f.esCosto?'(a costo)':''}</label><input id="c-utilidad" readonly class="${util>0?'ro-green':util<0?'ro-red':'ro-amber'}" value="${fmt(util)}"/></div>
@@ -741,7 +764,7 @@ ${dr('Cédula',p.cedula)}${dr('Correo',p.correo)}${dr('Edad',p.edad?p.edad+' añ
   ${['od','oi'].map(eye=>`<div class="fr2"><div class="fc ey">${eye.toUpperCase()}</div>${FK.map(k=>`<div class="fc" style="font-size:12px;color:${p[eye][k]?'var(--white)':'var(--gray)'}">${p[eye][k]||'—'}</div>`).join('')}</div>`).join('')}
 </div>
 <div class="sl2">Venta</div>
-${dr('Laboratorio',p.laboratorio)}${dr('N° Orden lab.',p.ordenLab)}${dr('Tipo de lente',p.tipoLente)}${dr('Montura / Ref.',p.montura)}${dr('Valor lente',fmt(p.valorLente))}${dr('Costo lente',fmt(p.costoLente))}${dr('Valor montura',fmt(p.valorMontura))}${dr('Costo montura',fmt(p.costoMontura))}${dr(isProsp?'Valor cotizado':'Total venta','<span style="color:var(--blue2);font-weight:800">'+fmt(v)+'</span>')}${dr('Costo total','<span style="color:var(--red);font-weight:800">'+fmt(c)+'</span>')}${dr(isProsp?'Utilidad proyectada':p.esCosto?'Utilidad (a costo)':'Utilidad','<span style="color:'+(u>0?'var(--green)':u<0?'var(--red)':'var(--amber)')+';font-weight:800">'+fmt(u)+'</span>')}
+${dr('Laboratorio',p.laboratorio)}${dr('N° Orden lab.',p.ordenLab)}${dr('Tipo de lente',p.tipoLente)}${tmont(p)==='normal'?dr('Montura / Ref.',p.montura):dr('Montura',MONTTXT[tmont(p)])}${dr('Valor lente',fmt(p.valorLente))}${dr('Costo lente',fmt(p.costoLente))}${tmont(p)==='normal'?dr('Valor montura',fmt(p.valorMontura))+dr('Costo montura',fmt(p.costoMontura)):''}${dr(isProsp?'Valor cotizado':'Total venta','<span style="color:var(--blue2);font-weight:800">'+fmt(v)+'</span>')}${dr('Costo total','<span style="color:var(--red);font-weight:800">'+fmt(c)+'</span>')}${dr(isProsp?'Utilidad proyectada':p.esCosto?'Utilidad (a costo)':'Utilidad','<span style="color:'+(u>0?'var(--green)':u<0?'var(--red)':'var(--amber)')+';font-weight:800">'+fmt(u)+'</span>')}
 ${p.observaciones?`<div class="sl2">Observaciones</div><div style="font-size:13px;line-height:1.5;white-space:pre-wrap;color:var(--white);background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px">${esc(p.observaciones)}</div>`:''}
 <div class="sl2">Pagos</div>
 <div class="sb">
@@ -1053,7 +1076,7 @@ function filterMonturaRecs(){
   return S.records.filter(r=>tcli(r)==='activo').filter(r=>{
     const tieneMontura=!!(r.montura&&r.montura.trim());
     const matchQ=!q||r.nombre.toLowerCase().includes(q)||(r.montura||'').toLowerCase().includes(q)||(r.control||'').toLowerCase().includes(q);
-    const matchF=S.dashMFilter==='all'||(S.dashMFilter==='with'&&tieneMontura)||(S.dashMFilter==='missing'&&!tieneMontura);
+    const matchF=S.dashMFilter==='all'||(S.dashMFilter==='with'&&tmont(r)==='normal'&&tieneMontura)||(S.dashMFilter==='missing'&&tmont(r)==='normal'&&!tieneMontura);
     return matchQ&&matchF;
   }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
 }
@@ -1062,11 +1085,12 @@ function renderMonturaRows(recs){
   if(!recs.length) return`<div class="empty"><span>🕶️</span><p>Sin resultados.<br>Prueba otro término o cambia el filtro.</p></div>`;
   return recs.map(r=>{
     const tieneMontura=!!(r.montura&&r.montura.trim());
+    const otro=tmont(r)!=='normal';
     return`
 <div class="pi" onclick="openDetail('${r.id}')">
-  <div class="av${tieneMontura?'':' av-r'}">${r.nombre.charAt(0).toUpperCase()}</div>
+  <div class="av${tieneMontura||otro?'':' av-r'}">${r.nombre.charAt(0).toUpperCase()}</div>
   <div class="pi-info"><div class="pi-n">${r.nombre}</div><div class="pi-s">Ctrl ${r.control||'—'} · ${r.fecha}${tieneMontura?' · '+esc(r.montura):''}</div></div>
-  <div class="pi-r">${tieneMontura?`<div class="pi-amt">${fmt(r.valorMontura)}</div>`:`<span class="bdg pending">⚠️ Sin montura</span>`}</div>
+  <div class="pi-r">${tieneMontura?`<div class="pi-amt">${fmt(r.valorMontura)}</div>`:otro?`<span class="bdg costo">${MONTTXT[tmont(r)]}</span>`:`<span class="bdg pending">⚠️ Sin montura</span>`}</div>
 </div>`;
   }).join('');
 }
@@ -1086,8 +1110,9 @@ function setDashMFilter(v){
 
 function vDashMonturas(){
   const base=S.records.filter(r=>tcli(r)==='activo');
-  const conM=base.filter(r=>r.montura&&r.montura.trim()).length;
-  const sinM=base.length-conM;
+  const normales=base.filter(r=>tmont(r)==='normal');
+  const conM=normales.filter(r=>r.montura&&r.montura.trim()).length;
+  const sinM=normales.length-conM;
   return`
 <div class="stat-grid" style="padding:14px 16px 4px">
   <div class="stat-pill sp-g"><div class="sp-l">Con montura</div><div class="sp-v" style="color:var(--green)">${conM}</div><div class="sp-s">registrada</div></div>
@@ -1258,7 +1283,7 @@ function doExport(){
     'OI Esfera':p.oi.esfera,'OI Cilindro':p.oi.cilindro,'OI Eje':p.oi.eje,'OI Adición':p.oi.adicion,'OI DP':p.oi.dp||'','OI AVL':p.oi.avl||'','OI AVP':p.oi.avp||'',
     'Laboratorio':p.laboratorio,'N° Orden Lab.':p.ordenLab,'Enviado a Lab':p.enviadoLab?'Sí':'No','Pendiente por entregar':p.porEntregar?'Sí':'No','Entregado':p.entregado?'Sí':'No',
     'Tipo Lente':p.tipoLente,'Valor Lente':parseFloat(p.valorLente)||0,'Costo Lente':parseFloat(p.costoLente)||0,
-    'Montura':p.montura,'Valor Montura':parseFloat(p.valorMontura)||0,'Costo Montura':parseFloat(p.costoMontura)||0,
+    'Tipo Montura':MONTTXT[tmont(p)],'Montura':p.montura,'Valor Montura':parseFloat(p.valorMontura)||0,'Costo Montura':parseFloat(p.costoMontura)||0,
     'Total Venta':tvp(p),'Costo Total':tcp(p),'Utilidad':tup(p),
     'Total Abonado':tap(p),'Saldo Pendiente':Math.max(0,tsp(p)),
     'Estado':elbl(estp(p)),
@@ -1298,7 +1323,7 @@ function doImport(){
           porEntregar:String(r['Pendiente por entregar']||'').toLowerCase().startsWith('s'),
           entregado:String(r['Entregado']||'').toLowerCase().startsWith('s'),
           tipoLente:r['Tipo Lente']||'',valorLente:r['Valor Lente']||'',costoLente:r['Costo Lente']||'',
-          montura:r['Montura']||'',valorMontura:r['Valor Montura']||'',costoMontura:r['Costo Montura']||'',
+          tipoMontura:/propia/i.test(String(r['Tipo Montura']||''))?'propia':/contacto/i.test(String(r['Tipo Montura']||''))?'contacto':'normal',montura:r['Montura']||'',valorMontura:r['Valor Montura']||'',costoMontura:r['Costo Montura']||'',
           abonoInicial:'',observaciones:String(r['Observaciones']||''),
           abonos:r['Abonos']?String(r['Abonos']).split('|').filter(Boolean).map(s=>{
             const[fecha,resto]=(s.trim()).split(':');
@@ -1327,7 +1352,7 @@ window.doExport=doExport;window.doImport=doImport;
 window.setDashTab=setDashTab;window.setDashMonth=setDashMonth;window.shiftMonth=shiftMonth;
 window.doAddGasto=doAddGasto;window.startEditGasto=startEditGasto;window.cancelEditGasto=cancelEditGasto;window.delGasto=delGasto;window.toggleJornada=toggleJornada;
 window.filterMonturas=filterMonturas;window.setDashMFilter=setDashMFilter;
-window.filterJornadas=filterJornadas;window.clearJornFilters=clearJornFilters;window.filterObs=filterObs;window.setCostFilter=setCostFilter;
+window.setTipoMontura=setTipoMontura;window.filterJornadas=filterJornadas;window.clearJornFilters=clearJornFilters;window.filterObs=filterObs;window.setCostFilter=setCostFilter;
 window.doLogout=()=>auth.signOut();
 
 // ── Sesión y sincronización en tiempo real ──────────────────────────────────
