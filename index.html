@@ -692,9 +692,9 @@ function vForm(){
 </div>
 <div class="f"><label>Montura</label>
   <select id="fi-tipoMontura" onchange="setTipoMontura(this.value)">
-    <option value="normal" ${tmont(f)==='normal'?'selected':''}>🕶️ Montura de la óptica (se vende)</option>
+    <option value="normal" ${tmont(f)==='normal'?'selected':''}>🕶️ Montura de la óptica</option>
     <option value="propia" ${tmont(f)==='propia'?'selected':''}>👤 Montura propia del paciente</option>
-    <option value="contacto" ${tmont(f)==='contacto'?'selected':''}>👁️ Lentes de contacto (sin montura)</option>
+    <option value="contacto" ${tmont(f)==='contacto'?'selected':''}>👁️ Lentes de contacto</option>
   </select>
 </div>
 ${tmont(f)==='normal'?`<div class="f"><label>Montura (marca / referencia)</label><input id="fi-montura" value="${esc(f.montura)}" onchange="sf('montura',this.value)" placeholder="Ray-Ban RB3025…"/></div>
